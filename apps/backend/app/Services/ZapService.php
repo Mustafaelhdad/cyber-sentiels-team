@@ -5,17 +5,18 @@ namespace App\Services;
 use App\Models\RunTask;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class ZapService
 {
   protected string $baseUrl;
   protected ?string $apiKey;
+  protected ArtifactStorageService $artifactStorage;
 
-  public function __construct()
+  public function __construct(ArtifactStorageService $artifactStorage)
   {
     $this->baseUrl = config('services.zap.host', 'http://zap:8080');
     $this->apiKey = config('services.zap.api_key');
+    $this->artifactStorage = $artifactStorage;
   }
 
   /**
@@ -103,7 +104,7 @@ class ZapService
   /**
    * Get alerts/findings.
    */
-  public function getAlerts(string $baseUrl = null): array
+  public function getAlerts(?string $baseUrl = null): array
   {
     try {
       $params = ['apikey' => $this->apiKey];
@@ -122,6 +123,9 @@ class ZapService
 
   /**
    * Generate and save HTML report.
+   *
+   * @param RunTask $task The task to store the report for
+   * @return string|null The relative path to the report or null on failure
    */
   public function generateHtmlReport(RunTask $task): ?string
   {
@@ -131,18 +135,9 @@ class ZapService
       ]);
 
       if ($response->successful()) {
-        $reportPath = $task->getReportStoragePath();
-        $filename = 'report.html';
-        $fullPath = "{$reportPath}/{$filename}";
+        $relativePath = $this->artifactStorage->storeReport($task, 'report.html', $response->body());
 
-        // Ensure directory exists
-        if (!is_dir($reportPath)) {
-          mkdir($reportPath, 0755, true);
-        }
-
-        file_put_contents($fullPath, $response->body());
-
-        return $filename;
+        return $relativePath;
       }
 
       return null;
@@ -154,6 +149,9 @@ class ZapService
 
   /**
    * Generate and save JSON report.
+   *
+   * @param RunTask $task The task to store the report for
+   * @return string|null The relative path to the report or null on failure
    */
   public function generateJsonReport(RunTask $task): ?string
   {
@@ -163,23 +161,49 @@ class ZapService
       ]);
 
       if ($response->successful()) {
-        $reportPath = $task->getReportStoragePath();
-        $filename = 'report.json';
-        $fullPath = "{$reportPath}/{$filename}";
+        $contents = json_encode($response->json(), JSON_PRETTY_PRINT);
+        $relativePath = $this->artifactStorage->storeReport($task, 'report.json', $contents);
 
-        // Ensure directory exists
-        if (!is_dir($reportPath)) {
-          mkdir($reportPath, 0755, true);
-        }
-
-        file_put_contents($fullPath, json_encode($response->json(), JSON_PRETTY_PRINT));
-
-        return $filename;
+        return $relativePath;
       }
 
       return null;
     } catch (\Exception $e) {
       Log::error('ZAP JSON report error', ['error' => $e->getMessage()]);
+      return null;
+    }
+  }
+
+  /**
+   * Store execution log for a task.
+   *
+   * @param RunTask $task The task to store the log for
+   * @param string $logContent The log content to store
+   * @return string|null The relative path to the log or null on failure
+   */
+  public function storeExecutionLog(RunTask $task, string $logContent): ?string
+  {
+    try {
+      return $this->artifactStorage->storeLog($task, 'execution.log', $logContent);
+    } catch (\Exception $e) {
+      Log::error('ZAP log storage error', ['error' => $e->getMessage()]);
+      return null;
+    }
+  }
+
+  /**
+   * Append to execution log for a task.
+   *
+   * @param RunTask $task The task to append the log for
+   * @param string $logContent The log content to append
+   * @return string|null The relative path to the log or null on failure
+   */
+  public function appendExecutionLog(RunTask $task, string $logContent): ?string
+  {
+    try {
+      return $this->artifactStorage->appendLog($task, 'execution.log', $logContent);
+    } catch (\Exception $e) {
+      Log::error('ZAP log append error', ['error' => $e->getMessage()]);
       return null;
     }
   }
@@ -217,4 +241,3 @@ class ZapService
     }
   }
 }
-

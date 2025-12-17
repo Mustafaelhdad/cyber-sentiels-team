@@ -71,6 +71,62 @@ class ReportController extends Controller
   }
 
   /**
+   * Download HTML report file for a task.
+   */
+  public function downloadHtml(Project $project, Run $run, RunTask $task): BinaryFileResponse|JsonResponse
+  {
+    $this->authorize('view', $project);
+
+    $filePath = $this->reportService->getHtmlReportFilePath($task);
+
+    if (!$filePath || !file_exists($filePath)) {
+      return response()->json([
+        'message' => 'HTML report file not found',
+      ], 404);
+    }
+
+    return response()->download($filePath);
+  }
+
+  /**
+   * Download logs file for a task.
+   */
+  public function downloadLogs(Project $project, Run $run, RunTask $task): BinaryFileResponse|JsonResponse
+  {
+    $this->authorize('view', $project);
+
+    $filePath = $this->reportService->getLogsFilePath($task);
+
+    if (!$filePath || !file_exists($filePath)) {
+      return response()->json([
+        'message' => 'Logs file not found',
+      ], 404);
+    }
+
+    return response()->download($filePath);
+  }
+
+  /**
+   * Get logs content for a task.
+   */
+  public function logs(Project $project, Run $run, RunTask $task): JsonResponse
+  {
+    $this->authorize('view', $project);
+
+    $logs = $this->reportService->getTaskLogs($task);
+
+    if ($logs === null) {
+      return response()->json([
+        'message' => 'Logs not available',
+      ], 404);
+    }
+
+    return response()->json([
+      'logs' => $logs,
+    ]);
+  }
+
+  /**
    * Get vulnerabilities/findings from a run.
    */
   public function findings(Project $project, Run $run): JsonResponse

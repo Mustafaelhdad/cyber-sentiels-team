@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class RunTask extends Model
 {
@@ -77,14 +78,26 @@ class RunTask extends Model
 
   /**
    * Mark task as completed.
+   *
+   * @param string|null $reportPath Relative path to the report (e.g., "reports/{run_id}/{tool}/report.json")
+   * @param string|null $logsPath Relative path to the logs (e.g., "reports/{run_id}/{tool}/execution.log")
    */
-  public function markAsCompleted(?string $reportPath = null): void
+  public function markAsCompleted(?string $reportPath = null, ?string $logsPath = null): void
   {
-    $this->update([
+    $data = [
       'status' => self::STATUS_COMPLETED,
       'progress' => 100,
-      'report_path' => $reportPath,
-    ]);
+    ];
+
+    if ($reportPath !== null) {
+      $data['report_path'] = $reportPath;
+    }
+
+    if ($logsPath !== null) {
+      $data['logs_path'] = $logsPath;
+    }
+
+    $this->update($data);
   }
 
   /**
@@ -107,10 +120,84 @@ class RunTask extends Model
   }
 
   /**
+   * Get the relative artifact directory path for this task.
+   *
+   * @return string e.g. "reports/{run_id}/{tool}"
+   */
+  public function getArtifactDirectory(): string
+  {
+    return "reports/{$this->run_id}/{$this->tool}";
+  }
+
+  /**
+   * Get the absolute disk path for the artifact directory.
+   *
+   * @return string Full filesystem path
+   */
+  public function getAbsoluteArtifactDirectory(): string
+  {
+    return Storage::disk('local')->path($this->getArtifactDirectory());
+  }
+
+  /**
+   * Get the absolute disk path for the report file.
+   *
+   * @return string|null Full filesystem path or null if no report
+   */
+  public function getAbsoluteReportPath(): ?string
+  {
+    if (empty($this->report_path)) {
+      return null;
+    }
+
+    return Storage::disk('local')->path($this->report_path);
+  }
+
+  /**
+   * Get the absolute disk path for the logs file.
+   *
+   * @return string|null Full filesystem path or null if no logs
+   */
+  public function getAbsoluteLogsPath(): ?string
+  {
+    if (empty($this->logs_path)) {
+      return null;
+    }
+
+    return Storage::disk('local')->path($this->logs_path);
+  }
+
+  /**
+   * Check if the report file exists.
+   */
+  public function hasReport(): bool
+  {
+    if (empty($this->report_path)) {
+      return false;
+    }
+
+    return Storage::disk('local')->exists($this->report_path);
+  }
+
+  /**
+   * Check if the logs file exists.
+   */
+  public function hasLogs(): bool
+  {
+    if (empty($this->logs_path)) {
+      return false;
+    }
+
+    return Storage::disk('local')->exists($this->logs_path);
+  }
+
+  /**
    * Get the full report storage path.
+   *
+   * @deprecated Use getAbsoluteArtifactDirectory() instead
    */
   public function getReportStoragePath(): string
   {
-    return storage_path("app/reports/{$this->run_id}/{$this->tool}");
+    return $this->getAbsoluteArtifactDirectory();
   }
 }

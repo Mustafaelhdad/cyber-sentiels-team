@@ -106,11 +106,21 @@ class ExecuteToolJob implements ShouldQueue
     $this->task->updateProgress(80);
 
     // Generate reports
-    $reportFile = $zapService->generateJsonReport($this->task);
-    $zapService->generateHtmlReport($this->task);
+    $jsonReportPath = $zapService->generateJsonReport($this->task);
+    $htmlReportPath = $zapService->generateHtmlReport($this->task);
+
+    // Store execution log with scan summary
+    $logContent = sprintf(
+      "[%s] ZAP scan completed for target: %s\nJSON Report: %s\nHTML Report: %s\n",
+      now()->toIso8601String(),
+      $targetUrl,
+      $jsonReportPath ?? 'N/A',
+      $htmlReportPath ?? 'N/A'
+    );
+    $logsPath = $zapService->storeExecutionLog($this->task, $logContent);
 
     // Generic: 100% via markAsCompleted
-    $this->task->markAsCompleted($reportFile);
+    $this->task->markAsCompleted($jsonReportPath, $logsPath);
   }
 
   /**

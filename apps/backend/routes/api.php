@@ -61,5 +61,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/runs/{run}/report', [ReportController::class, 'runReport']);
     Route::get('/runs/{run}/tasks/{task}/report', [ReportController::class, 'taskReport']);
     Route::get('/runs/{run}/tasks/{task}/download', [ReportController::class, 'download']);
+    Route::get('/runs/{run}/tasks/{task}/download-html', [ReportController::class, 'downloadHtml']);
+    Route::get('/runs/{run}/tasks/{task}/logs', [ReportController::class, 'logs']);
+    Route::get('/runs/{run}/tasks/{task}/download-logs', [ReportController::class, 'downloadLogs']);
   });
 });

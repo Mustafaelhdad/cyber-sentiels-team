@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\Run;
 use App\Models\RunTask;
-use Illuminate\Support\Facades\Storage;
 
 class ReportService
 {
+  public function __construct(
+    protected ArtifactStorageService $artifactStorage
+  ) {}
   /**
    * Get summary for a run.
    */
@@ -45,14 +47,13 @@ class ReportService
       return null;
     }
 
-    $reportPath = $task->getReportStoragePath() . '/' . basename($task->report_path);
+    $content = $this->artifactStorage->read($task->report_path);
 
-    if (!file_exists($reportPath)) {
+    if ($content === null) {
       return null;
     }
 
-    $content = file_get_contents($reportPath);
-    $extension = pathinfo($reportPath, PATHINFO_EXTENSION);
+    $extension = pathinfo($task->report_path, PATHINFO_EXTENSION);
 
     // Parse based on format
     if ($extension === 'json') {
@@ -68,6 +69,9 @@ class ReportService
 
   /**
    * Get report file path for download.
+   *
+   * @param RunTask $task The task
+   * @return string|null The absolute filesystem path or null if not found
    */
   public function getReportFilePath(RunTask $task): ?string
   {
@@ -75,9 +79,63 @@ class ReportService
       return null;
     }
 
-    $reportPath = $task->getReportStoragePath() . '/' . basename($task->report_path);
+    if (!$this->artifactStorage->exists($task->report_path)) {
+      return null;
+    }
 
-    return file_exists($reportPath) ? $reportPath : null;
+    return $this->artifactStorage->getAbsolutePath($task->report_path);
+  }
+
+  /**
+   * Get logs file path for download.
+   *
+   * @param RunTask $task The task
+   * @return string|null The absolute filesystem path or null if not found
+   */
+  public function getLogsFilePath(RunTask $task): ?string
+  {
+    if (empty($task->logs_path)) {
+      return null;
+    }
+
+    if (!$this->artifactStorage->exists($task->logs_path)) {
+      return null;
+    }
+
+    return $this->artifactStorage->getAbsolutePath($task->logs_path);
+  }
+
+  /**
+   * Get logs content for a task.
+   *
+   * @param RunTask $task The task
+   * @return string|null The logs content or null if not found
+   */
+  public function getTaskLogs(RunTask $task): ?string
+  {
+    if (empty($task->logs_path)) {
+      return null;
+    }
+
+    return $this->artifactStorage->read($task->logs_path);
+  }
+
+  /**
+   * Get HTML report file path for download.
+   *
+   * @param RunTask $task The task
+   * @return string|null The absolute filesystem path or null if not found
+   */
+  public function getHtmlReportFilePath(RunTask $task): ?string
+  {
+    // HTML report is stored alongside JSON report with .html extension
+    $htmlPath = $task->getArtifactDirectory() . '/report.html';
+
+    if (!$this->artifactStorage->exists($htmlPath)) {
+      return null;
+    }
+
+    return $this->artifactStorage->getAbsolutePath($htmlPath);
   }
 
   /**
@@ -93,13 +151,11 @@ class ReportService
    */
   public function isJsonReport(RunTask $task): bool
   {
-    $filePath = $this->getReportFilePath($task);
-
-    if (!$filePath) {
+    if (empty($task->report_path)) {
       return false;
     }
 
-    return strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'json';
+    return strtolower(pathinfo($task->report_path, PATHINFO_EXTENSION)) === 'json';
   }
 
   /**
