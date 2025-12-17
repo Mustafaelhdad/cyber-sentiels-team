@@ -132,6 +132,25 @@ services:
       - sentinel_net
 
   # ===================
+  # PHPMYADMIN (Optional DB Admin)
+  # ===================
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: sentinel_phpmyadmin
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootsecret}
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - sentinel_net
+    profiles:
+      - admin
+
+  # ===================
   # OWASP ZAP (DAST Tool)
   # ===================
   zap:

@@ -48,6 +48,9 @@ cp .env.example .env
 # 2. Start services
 docker-compose up -d
 
+# 2b. Start with phpMyAdmin (optional)
+docker-compose --profile admin up -d
+
 # 3. Install backend dependencies
 docker-compose exec backend composer install
 
@@ -64,6 +67,7 @@ cd apps/frontend && npm install && npm run build
 |---------|------|-------------|
 | Nginx | 80 | Reverse proxy |
 | MySQL | 3306 | Database |
+| phpMyAdmin | 8080 | DB Admin (optional) |
 | Redis | 6379 | Cache & Queue |
 | ZAP | 8081 | DAST Scanner |
 
