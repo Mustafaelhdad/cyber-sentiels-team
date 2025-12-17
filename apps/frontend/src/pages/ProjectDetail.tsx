@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { useCurrentProject } from "@/hooks/useCurrentProject";
 
 interface Project {
   id: number;
@@ -83,6 +85,7 @@ const moduleLinks = [
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { setCurrentProject } = useCurrentProject();
 
   const {
     data: projectData,
@@ -96,6 +99,13 @@ export default function ProjectDetail() {
   });
 
   const project = projectData?.data;
+
+  // Set as current project when loaded
+  useEffect(() => {
+    if (project) {
+      setCurrentProject({ id: project.id, name: project.name });
+    }
+  }, [project, setCurrentProject]);
 
   if (isLoading) {
     return (
