@@ -22,10 +22,7 @@ class RunTask extends Model
     'progress',
     'logs_path',
     'report_path',
-    'meta',
-    'started_at',
-    'completed_at',
-    'error_message',
+    'meta_json',
   ];
 
   /**
@@ -37,9 +34,7 @@ class RunTask extends Model
   {
     return [
       'progress' => 'integer',
-      'started_at' => 'datetime',
-      'completed_at' => 'datetime',
-      'meta' => 'array',
+      'meta_json' => 'array',
     ];
   }
 
@@ -76,7 +71,6 @@ class RunTask extends Model
   {
     $this->update([
       'status' => self::STATUS_RUNNING,
-      'started_at' => now(),
       'progress' => 0,
     ]);
   }
@@ -84,11 +78,10 @@ class RunTask extends Model
   /**
    * Mark task as completed.
    */
-  public function markAsCompleted(string $reportPath = null): void
+  public function markAsCompleted(?string $reportPath = null): void
   {
     $this->update([
       'status' => self::STATUS_COMPLETED,
-      'completed_at' => now(),
       'progress' => 100,
       'report_path' => $reportPath,
     ]);
@@ -97,12 +90,11 @@ class RunTask extends Model
   /**
    * Mark task as failed.
    */
-  public function markAsFailed(string $error = null): void
+  public function markAsFailed(?string $error = null): void
   {
     $this->update([
       'status' => self::STATUS_FAILED,
-      'completed_at' => now(),
-      'error_message' => $error,
+      'meta_json' => array_merge($this->meta_json ?? [], ['error' => $error]),
     ]);
   }
 
@@ -122,4 +114,3 @@ class RunTask extends Model
     return storage_path("app/reports/{$this->run_id}/{$this->tool}");
   }
 }
-

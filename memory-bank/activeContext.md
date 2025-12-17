@@ -15,6 +15,12 @@
 - Database migrations for core data model
 - ZAP service integration for DAST scanning
 - Async job processing setup with Horizon
+- **Laravel Sanctum SPA authentication fully configured:**
+  - Cookie-based session authentication for SPAs
+  - CSRF protection via `/sanctum/csrf-cookie` endpoint
+  - Password reset flow (forgot-password/reset-password)
+  - Session management with proper regeneration
+  - Stateful domains configured for local dev (localhost:5173, etc.)
 
 ## Immediate Next Actions (to be done next)
 
@@ -24,6 +30,8 @@
 - Build Dashboard + module cards + simple config forms
 - Wire Apply button to POST `/api/projects/{id}/runs`
 - Implement auth flow UI (login/register forms)
+  - Frontend must call `GET /sanctum/csrf-cookie` before login/register
+  - Use `credentials: 'include'` in fetch requests for cookies
 
 ## Open Decisions
 

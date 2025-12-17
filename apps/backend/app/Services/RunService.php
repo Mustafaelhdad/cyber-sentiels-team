@@ -27,11 +27,11 @@ class RunService
   public function create(Project $project, array $data): Run
   {
     $run = $project->runs()->create([
+      'user_id' => $project->user_id,
       'module' => $data['module'],
       'target_type' => $data['target_type'],
       'target_value' => $data['target_value'],
       'status' => Run::STATUS_PENDING,
-      'meta' => $data['meta'] ?? [],
     ]);
 
     // Create tasks based on module
@@ -98,12 +98,12 @@ class RunService
       return;
     }
 
-    $run->update(['status' => Run::STATUS_CANCELLED, 'completed_at' => now()]);
+    $run->update(['status' => Run::STATUS_CANCELLED, 'finished_at' => now()]);
 
     // Mark pending tasks as cancelled
     $run->tasks()
       ->whereIn('status', [RunTask::STATUS_PENDING, RunTask::STATUS_RUNNING])
-      ->update(['status' => RunTask::STATUS_FAILED, 'error_message' => 'Cancelled by user']);
+      ->update(['status' => RunTask::STATUS_FAILED]);
   }
 
   /**
@@ -135,4 +135,3 @@ class RunService
     }
   }
 }
-

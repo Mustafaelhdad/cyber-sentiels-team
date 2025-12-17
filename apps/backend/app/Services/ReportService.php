@@ -21,7 +21,7 @@ class ReportService
       'status' => $run->status,
       'target' => $run->target_value,
       'started_at' => $run->started_at?->toIso8601String(),
-      'completed_at' => $run->completed_at?->toIso8601String(),
+      'finished_at' => $run->finished_at?->toIso8601String(),
       'duration_seconds' => $this->calculateDuration($run),
       'tasks' => $run->tasks->map(fn($task) => [
         'tool' => $task->tool,
@@ -147,7 +147,7 @@ class ReportService
         'location' => $alert['uri'] ?? $alert['url'] ?? '',
         'cweid' => $alert['cweid'] ?? null,
         'wascid' => $alert['wascid'] ?? null,
-        'timestamp' => $task->completed_at?->toIso8601String(),
+        'timestamp' => $task->updated_at?->toIso8601String(),
       ];
     }
 
@@ -187,7 +187,7 @@ class ReportService
       return null;
     }
 
-    $endTime = $run->completed_at ?? now();
+    $endTime = $run->finished_at ?? now();
 
     return $run->started_at->diffInSeconds($endTime);
   }
@@ -201,4 +201,3 @@ class ReportService
     return count($this->getFindings($run));
   }
 }
-

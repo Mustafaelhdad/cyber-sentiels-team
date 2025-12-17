@@ -61,5 +61,12 @@ class User extends Authenticatable
   {
     return $this->hasMany(Project::class);
   }
-}
 
+  /**
+   * Get user's runs.
+   */
+  public function runs()
+  {
+    return $this->hasMany(Run::class);
+  }
+}

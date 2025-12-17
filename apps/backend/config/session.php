@@ -119,6 +119,7 @@ return [
     |--------------------------------------------------------------------------
     */
 
+  // Use 'lax' for same-domain SPA, 'none' for cross-domain (requires HTTPS)
   'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
   /*
@@ -130,4 +131,3 @@ return [
   'partitioned' => env('SESSION_PARTITIONED_COOKIE', false),
 
 ];
-

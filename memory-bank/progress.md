@@ -23,7 +23,12 @@
   - Policies for authorization
   - Job: ExecuteToolJob for async tool execution
 - Database migrations: users, projects, runs, run_tasks, personal_access_tokens, jobs, cache
-- Sanctum configured for SPA authentication
+- **Sanctum SPA auth fully configured:**
+  - Cookie-based session authentication (not token-based)
+  - CSRF protection via `/sanctum/csrf-cookie` endpoint
+  - Password reset flow with forgot/reset endpoints
+  - Proper session regeneration on login/logout
+  - Stateful domains for local dev (localhost:5173, :3000, :8000)
 - Horizon configured for queue management
 - ZAP service integration ready
 

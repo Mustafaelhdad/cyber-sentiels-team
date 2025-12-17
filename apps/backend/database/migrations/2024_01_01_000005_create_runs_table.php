@@ -13,16 +13,17 @@ return new class extends Migration
   {
     Schema::create('runs', function (Blueprint $table) {
       $table->id();
+      $table->foreignId('user_id')->constrained()->onDelete('cascade');
       $table->foreignId('project_id')->constrained()->onDelete('cascade');
       $table->string('module'); // web_security, monitoring_ir, iam
       $table->string('target_type'); // url, repo, config
       $table->string('target_value', 2048);
       $table->string('status')->default('pending'); // pending, running, completed, failed, cancelled
       $table->timestamp('started_at')->nullable();
-      $table->timestamp('completed_at')->nullable();
-      $table->json('meta')->nullable();
-      $table->timestamps();
+      $table->timestamp('finished_at')->nullable();
+      $table->timestamps(); // includes created_at
 
+      $table->index(['user_id', 'created_at']);
       $table->index(['project_id', 'status']);
       $table->index(['project_id', 'created_at']);
     });
@@ -36,4 +37,3 @@ return new class extends Migration
     Schema::dropIfExists('runs');
   }
 };
-

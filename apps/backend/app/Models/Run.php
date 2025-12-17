@@ -17,14 +17,14 @@ class Run extends Model
    * @var array<int, string>
    */
   protected $fillable = [
+    'user_id',
     'project_id',
     'module',
     'target_type',
     'target_value',
     'status',
     'started_at',
-    'completed_at',
-    'meta',
+    'finished_at',
   ];
 
   /**
@@ -36,8 +36,7 @@ class Run extends Model
   {
     return [
       'started_at' => 'datetime',
-      'completed_at' => 'datetime',
-      'meta' => 'array',
+      'finished_at' => 'datetime',
     ];
   }
 
@@ -56,6 +55,14 @@ class Run extends Model
   public const MODULE_WEB_SECURITY = 'web_security';
   public const MODULE_MONITORING_IR = 'monitoring_ir';
   public const MODULE_IAM = 'iam';
+
+  /**
+   * Get the user that owns the run.
+   */
+  public function user(): BelongsTo
+  {
+    return $this->belongsTo(User::class);
+  }
 
   /**
    * Get the project that owns the run.
@@ -111,7 +118,7 @@ class Run extends Model
   {
     $this->update([
       'status' => self::STATUS_COMPLETED,
-      'completed_at' => now(),
+      'finished_at' => now(),
     ]);
   }
 
@@ -122,8 +129,7 @@ class Run extends Model
   {
     $this->update([
       'status' => self::STATUS_FAILED,
-      'completed_at' => now(),
+      'finished_at' => now(),
     ]);
   }
 }
-

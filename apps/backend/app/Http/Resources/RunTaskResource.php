@@ -20,12 +20,12 @@ class RunTaskResource extends JsonResource
       'tool' => $this->tool,
       'status' => $this->status,
       'progress' => $this->progress,
+      'logs_path' => $this->logs_path,
+      'report_path' => $this->report_path,
       'has_report' => !empty($this->report_path),
-      'error_message' => $this->error_message,
-      'started_at' => $this->started_at?->toIso8601String(),
-      'completed_at' => $this->completed_at?->toIso8601String(),
+      'meta_json' => $this->meta_json,
       'created_at' => $this->created_at->toIso8601String(),
+      'updated_at' => $this->updated_at->toIso8601String(),
     ];
   }
 }
-

@@ -19,10 +19,7 @@ return new class extends Migration
       $table->unsignedTinyInteger('progress')->default(0); // 0-100
       $table->string('logs_path')->nullable();
       $table->string('report_path')->nullable();
-      $table->json('meta')->nullable();
-      $table->text('error_message')->nullable();
-      $table->timestamp('started_at')->nullable();
-      $table->timestamp('completed_at')->nullable();
+      $table->json('meta_json')->nullable();
       $table->timestamps();
 
       $table->index(['run_id', 'status']);
@@ -37,4 +34,3 @@ return new class extends Migration
     Schema::dropIfExists('run_tasks');
   }
 };
-
