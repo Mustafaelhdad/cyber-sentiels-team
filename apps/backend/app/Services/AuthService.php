@@ -35,11 +35,12 @@ class AuthService
    */
   public function attemptLogin(array $credentials): ?User
   {
-    if (!Auth::attempt($credentials)) {
+    // Use session-based web guard for SPA cookie auth
+    if (!Auth::guard('web')->attempt($credentials)) {
       return null;
     }
 
-    return Auth::user();
+    return Auth::guard('web')->user();
   }
 
   /**

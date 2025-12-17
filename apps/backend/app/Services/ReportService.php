@@ -24,6 +24,7 @@ class ReportService
       'finished_at' => $run->finished_at?->toIso8601String(),
       'duration_seconds' => $this->calculateDuration($run),
       'tasks' => $run->tasks->map(fn($task) => [
+        'id' => $task->id,
         'tool' => $task->tool,
         'status' => $task->status,
         'progress' => $task->progress,

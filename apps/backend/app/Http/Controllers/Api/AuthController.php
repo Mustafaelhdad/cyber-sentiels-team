@@ -27,7 +27,7 @@ class AuthController extends Controller
     $user = $this->authService->register($request->validated());
 
     // Login the user via session (SPA auth)
-    Auth::login($user);
+    Auth::guard('web')->login($user);
 
     return response()->json([
       'message' => 'User registered successfully',
@@ -36,24 +36,23 @@ class AuthController extends Controller
   }
 
   /**
-   * Login user (SPA cookie-based auth).
+   * Login user (token-based auth for API clients).
    */
   public function login(LoginRequest $request): JsonResponse
   {
-    $user = $this->authService->attemptLogin($request->validated());
+    $result = $this->authService->loginWithToken($request->validated());
 
-    if (!$user) {
+    if (!$result) {
       return response()->json([
         'message' => 'Invalid credentials',
       ], 401);
     }
 
-    // Regenerate session to prevent fixation
-    $request->session()->regenerate();
-
     return response()->json([
       'message' => 'Login successful',
-      'user' => new UserResource($user),
+      'user' => new UserResource($result['user']),
+      'token' => $result['token'],
+      'token_type' => 'Bearer',
     ]);
   }
 
@@ -63,10 +62,6 @@ class AuthController extends Controller
   public function logout(Request $request): JsonResponse
   {
     $this->authService->logout($request->user());
-
-    // Invalidate session and regenerate token
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
 
     return response()->json([
       'message' => 'Logged out successfully',
