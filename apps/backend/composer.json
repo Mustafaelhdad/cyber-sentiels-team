@@ -10,10 +10,11 @@
   "license": "proprietary",
   "require": {
     "php": "^8.2",
+    "guzzlehttp/guzzle": "^7.8",
     "laravel/framework": "^11.0",
     "laravel/sanctum": "^4.0",
     "laravel/tinker": "^2.9",
-    "guzzlehttp/guzzle": "^7.8"
+    "predis/predis": "^3.3"
   },
   "require-dev": {
     "fakerphp/faker": "^1.23",
@@ -70,4 +71,3 @@
   "minimum-stability": "stable",
   "prefer-stable": true
 }
-
