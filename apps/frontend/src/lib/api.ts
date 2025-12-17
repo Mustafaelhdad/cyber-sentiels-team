@@ -63,3 +63,51 @@ export async function apiFetch<T>(
 
   return res.json() as Promise<T>;
 }
+
+/**
+ * Fetch a resource as a Blob (for binary files like PDF, images).
+ * Includes credentials and handles errors.
+ */
+export async function apiFetchBlob(path: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    let message = `Request failed: ${res.status}`;
+    try {
+      const json = JSON.parse(text);
+      message = json.message || message;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  return res.blob();
+}
+
+/**
+ * Fetch a resource as text (for HTML reports, logs, etc.).
+ * Includes credentials and handles errors.
+ */
+export async function apiFetchText(path: string): Promise<string> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    let message = `Request failed: ${res.status}`;
+    try {
+      const json = JSON.parse(text);
+      message = json.message || message;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  return res.text();
+}

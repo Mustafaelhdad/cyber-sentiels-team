@@ -80,6 +80,7 @@ export default function RootLayout() {
                   </Link>
                 );
               })}
+
               {/* Current Project Indicator */}
               {hasProject && currentProject && (
                 <div className="ml-2 pl-4 border-l border-gray-300 dark:border-gray-600">
