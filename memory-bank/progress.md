@@ -31,6 +31,11 @@
   - Stateful domains for local dev (localhost:5173, :3000, :8000)
 - Horizon configured for queue management
 - ZAP service integration ready
+- **SSE Log Streaming:**
+  - `RunStreamController@stream` at `GET /api/projects/{project}/runs/{run}/stream`
+  - `RunLogStreamService` handles snapshot/history/tail/heartbeat/done events
+  - `ZapService::log()` helper for structured log lines
+  - `ExecuteToolJob` instrumented to emit logs at all milestones
 
 ## Next Milestones
 
@@ -39,6 +44,7 @@
 - Wire Apply button to POST runs endpoint
 - Add ZAP report viewer component
 - Test full auth flow (register/login/logout)
+- Wire frontend to SSE log stream for live run progress
 
 ## Risks / Notes
 

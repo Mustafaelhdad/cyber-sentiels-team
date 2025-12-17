@@ -21,6 +21,12 @@
   - Password reset flow (forgot-password/reset-password)
   - Session management with proper regeneration
   - Stateful domains configured for local dev (localhost:5173, etc.)
+- **SSE Log Streaming implemented:**
+  - Endpoint: `GET /api/projects/{project}/runs/{run}/stream`
+  - Sanctum session auth required
+  - Events: `snapshot`, `log`, `status`, `heartbeat`, `done`
+  - Replays historical logs then live-tails new content
+  - Structured log format: `[ISO_TIMESTAMP] LEVEL: message`
 
 ## Immediate Next Actions (to be done next)
 
@@ -36,4 +42,4 @@
 ## Open Decisions
 
 - When to introduce Keycloak/SSO and IAM consolidation.
-- Exact realtime choice (Reverb vs SSE) after baseline is up.
+- SSE chosen for realtime (simpler than Reverb for MVP; can add Reverb later if needed).

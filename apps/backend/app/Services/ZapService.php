@@ -209,6 +209,24 @@ class ZapService
   }
 
   /**
+   * Format and append a structured log line.
+   *
+   * Format: [ISO_TIMESTAMP] LEVEL: message
+   *
+   * @param RunTask $task The task to append the log for
+   * @param string $level Log level (INFO, DEBUG, WARN, ERROR)
+   * @param string $message The log message
+   * @return string|null The relative path to the log or null on failure
+   */
+  public function log(RunTask $task, string $level, string $message): ?string
+  {
+    $timestamp = now()->toIso8601String();
+    $formattedLine = "[{$timestamp}] {$level}: {$message}\n";
+
+    return $this->appendExecutionLog($task, $formattedLine);
+  }
+
+  /**
    * Clear session (for fresh scans).
    */
   public function newSession(): bool

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
+use App\Http\Controllers\Api\RunStreamController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -64,5 +65,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/runs/{run}/tasks/{task}/download-html', [ReportController::class, 'downloadHtml']);
     Route::get('/runs/{run}/tasks/{task}/logs', [ReportController::class, 'logs']);
     Route::get('/runs/{run}/tasks/{task}/download-logs', [ReportController::class, 'downloadLogs']);
+
+    // SSE log streaming
+    Route::get('/runs/{run}/stream', [RunStreamController::class, 'stream']);
   });
 });
