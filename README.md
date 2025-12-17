@@ -14,7 +14,7 @@ A unified cybersecurity platform that integrates multiple security tools under o
 
 - **Frontend**: React + Vite + Tailwind + TanStack Query
 - **Backend**: Laravel 11 + Sanctum + Horizon
-- **Database**: PostgreSQL
+- **Database**: MySQL 8.0
 - **Cache/Queue**: Redis
 - **Proxy**: Nginx
 - **Containers**: Docker Compose
@@ -63,7 +63,7 @@ cd apps/frontend && npm install && npm run build
 | Service | Port | Description |
 |---------|------|-------------|
 | Nginx | 80 | Reverse proxy |
-| PostgreSQL | 5432 | Database |
+| MySQL | 3306 | Database |
 | Redis | 6379 | Cache & Queue |
 | ZAP | 8081 | DAST Scanner |
 

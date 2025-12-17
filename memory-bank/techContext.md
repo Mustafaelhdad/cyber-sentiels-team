@@ -15,7 +15,7 @@
 
 ## Data
 
-- Primary DB: PostgreSQL (MySQL acceptable, Postgres preferred for analytics).
+- Primary DB: MySQL 8.0 (MySQL acceptable, Postgres preferred for analytics).
 - Caching/Queue: Redis.
 
 ## Infra
