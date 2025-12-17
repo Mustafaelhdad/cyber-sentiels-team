@@ -35,6 +35,9 @@ Route::prefix('auth')->group(function () {
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+  // Current user shorthand
+  Route::get('/me', [AuthController::class, 'user']);
+
   // Auth
   Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
