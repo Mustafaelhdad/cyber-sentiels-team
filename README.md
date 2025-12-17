@@ -4,11 +4,11 @@ A unified cybersecurity platform that integrates multiple security tools under o
 
 ## Modules
 
-| Module | Tools |
-|--------|-------|
-| **Web Security** | WAF (ModSecurity), DAST (ZAP), SAST (SonarQube), RASP |
-| **Monitoring & IR** | SIEM (Wazuh), TIP (MISP), SOAR (n8n) |
-| **IAM** | Authentication, Authorization, Audit (Keycloak) |
+| Module              | Tools                                                 |
+| ------------------- | ----------------------------------------------------- |
+| **Web Security**    | WAF (ModSecurity), DAST (ZAP), SAST (SonarQube), RASP |
+| **Monitoring & IR** | SIEM (Wazuh), TIP (MISP), SOAR (n8n)                  |
+| **IAM**             | Authentication, Authorization, Audit (Keycloak)       |
 
 ## Tech Stack
 
@@ -69,13 +69,13 @@ cd apps/frontend && npm install && npm run build
 
 ## Services
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Nginx | 80 | Reverse proxy |
-| MySQL | 3306 | Database |
+| Service    | Port | Description         |
+| ---------- | ---- | ------------------- |
+| Nginx      | 80   | Reverse proxy       |
+| MySQL      | 3306 | Database            |
 | phpMyAdmin | 8080 | DB Admin (optional) |
-| Redis | 6379 | Cache & Queue |
-| ZAP | 8081 | DAST Scanner |
+| Redis      | 6379 | Cache & Queue       |
+| ZAP        | 8081 | DAST Scanner        |
 
 ## Development
 
