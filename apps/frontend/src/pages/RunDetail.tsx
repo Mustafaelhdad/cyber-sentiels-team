@@ -1,54 +1,16 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { apiFetch, apiFetchBlob } from "@/lib/api";
 import { useCurrentProject } from "@/hooks/useCurrentProject";
 import { useEffect, useState, useRef, useMemo } from "react";
-
-interface RunTask {
-  id: number;
-  run_id: number;
-  tool: string;
-  status: string;
-  progress: number;
-  logs_path: string | null;
-  report_path: string | null;
-  has_report: boolean;
-  has_html_report?: boolean;
-  meta_json: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Run {
-  id: number;
-  user_id: number;
-  project_id: number;
-  module: string;
-  target_type: string;
-  target_value: string;
-  status: string;
-  started_at: string | null;
-  finished_at: string | null;
-  tasks: RunTask[];
-  created_at: string;
-  updated_at: string;
-}
-
-interface RunResponse {
-  run: Run;
-}
-
-interface Project {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProjectResponse {
-  project: Project;
-}
+import {
+  useProject,
+  useRun,
+  useRunTasks,
+  useCancelRun,
+  type RunTask,
+  type Run,
+} from "@/hooks/useApiQueries";
 
 interface LogsResponse {
   logs: string;
@@ -843,20 +805,15 @@ export default function RunDetail() {
     runId: string;
   }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { setCurrentProject } = useCurrentProject();
 
   // State for selected tool tab and viewer tab
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [viewerTab, setViewerTab] = useState<ViewerTab>("status");
 
-  // Fetch project details
-  const { data: projectData, isLoading: projectLoading } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => apiFetch<ProjectResponse>(`/projects/${projectId}`),
-    enabled: !!projectId,
-  });
-
+  // Use shared hooks
+  const { data: projectData, isLoading: projectLoading } =
+    useProject(projectId);
   const project = projectData?.project;
 
   // Set as current project when loaded
@@ -866,47 +823,30 @@ export default function RunDetail() {
     }
   }, [project, setCurrentProject]);
 
-  // Fetch run details
+  // Fetch run details using shared hook (includes smart polling)
   const {
     data: runData,
     isLoading: runLoading,
     isError: runError,
     error: runErrorObj,
-  } = useQuery({
-    queryKey: ["run", projectId, runId],
-    queryFn: () =>
-      apiFetch<RunResponse>(`/projects/${projectId}/runs/${runId}`),
-    enabled: !!projectId && !!runId,
-    refetchInterval: (query) => {
-      const run = query.state.data?.run;
-      // Poll only if run is pending or running
-      if (run && (run.status === "pending" || run.status === "running")) {
-        return 3000;
-      }
-      return false;
-    },
-  });
+  } = useRun(projectId, runId);
 
   const run = runData?.run;
 
-  // Auto-select first task when run loads
-  useEffect(() => {
-    if (run && run.tasks.length > 0 && selectedTaskId === null) {
-      setSelectedTaskId(run.tasks[0].id);
-    }
-  }, [run, selectedTaskId]);
+  // Fetch tasks from dedicated endpoint for freshness (includes smart polling)
+  const { data: tasksData } = useRunTasks(projectId, runId);
+  // Use tasks from dedicated query, fallback to run's tasks
+  const tasks = tasksData?.tasks ?? run?.tasks ?? [];
 
-  // Cancel mutation
-  const cancelMutation = useMutation({
-    mutationFn: () =>
-      apiFetch<void>(`/projects/${projectId}/runs/${runId}/cancel`, {
-        method: "POST",
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["run", projectId, runId] });
-      queryClient.invalidateQueries({ queryKey: ["runs", projectId] });
-    },
-  });
+  // Auto-select first task when tasks load
+  useEffect(() => {
+    if (tasks.length > 0 && selectedTaskId === null) {
+      setSelectedTaskId(tasks[0].id);
+    }
+  }, [tasks, selectedTaskId]);
+
+  // Cancel mutation using shared hook
+  const cancelMutation = useCancelRun(projectId!, runId!);
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to cancel this run?")) {
@@ -914,11 +854,11 @@ export default function RunDetail() {
     }
   };
 
-  // Get selected task
+  // Get selected task from tasks data
   const selectedTask = useMemo(() => {
-    if (!run || selectedTaskId === null) return null;
-    return run.tasks.find((t) => t.id === selectedTaskId) || null;
-  }, [run, selectedTaskId]);
+    if (selectedTaskId === null) return null;
+    return tasks.find((t) => t.id === selectedTaskId) || null;
+  }, [tasks, selectedTaskId]);
 
   // Check if task/run is active (for live polling)
   const isTaskActive = useMemo(() => {
@@ -928,11 +868,10 @@ export default function RunDetail() {
     );
   }, [selectedTask]);
 
-  // Calculate overall run progress
+  // Calculate overall run progress from tasks
   const runProgress = useMemo(() => {
-    if (!run) return 0;
-    return calculateRunProgress(run.tasks);
-  }, [run]);
+    return calculateRunProgress(tasks);
+  }, [tasks]);
 
   if (projectLoading || runLoading) {
     return (
@@ -1176,7 +1115,7 @@ export default function RunDetail() {
       </div>
 
       {/* Tool Tabs + Viewer Panel */}
-      {run.tasks.length === 0 ? (
+      {tasks.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
@@ -1200,7 +1139,7 @@ export default function RunDetail() {
           {/* Tool Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex overflow-x-auto">
-              {run.tasks.map((task) => (
+              {tasks.map((task) => (
                 <button
                   key={task.id}
                   onClick={() => {

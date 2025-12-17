@@ -1,20 +1,7 @@
 import { useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
 import { useCurrentProject } from "@/hooks/useCurrentProject";
-
-interface Project {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProjectResponse {
-  project: Project;
-}
+import { useProject } from "@/hooks/useApiQueries";
 
 const moduleLinks = [
   {
@@ -87,16 +74,13 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { setCurrentProject } = useCurrentProject();
 
+  // Use shared hook
   const {
     data: projectData,
     isLoading,
     isError,
     error,
-  } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => apiFetch<ProjectResponse>(`/projects/${projectId}`),
-    enabled: !!projectId,
-  });
+  } = useProject(projectId);
 
   const project = projectData?.project;
 

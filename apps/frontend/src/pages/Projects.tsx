@@ -1,28 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
 import { useCurrentProject } from "@/hooks/useCurrentProject";
-
-interface Project {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProjectsResponse {
-  data: Project[];
-}
-
-interface CreateProjectPayload {
-  name: string;
-  description?: string;
-}
+import {
+  useProjects,
+  useCreateProject,
+  useDeleteProject,
+  queryKeys,
+  type Project,
+} from "@/hooks/useApiQueries";
+import { queryClient } from "@/lib/queryClient";
 
 export default function Projects() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { currentProject, setCurrentProject, clearCurrentProject } =
     useCurrentProject();
@@ -35,50 +23,28 @@ export default function Projects() {
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
-  const {
-    data: projectsData,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => apiFetch<ProjectsResponse>("/projects"),
-  });
+  // Use shared hooks
+  const { data: projectsData, isLoading, isError, error } = useProjects();
 
-  const createMutation = useMutation({
-    mutationFn: (payload: CreateProjectPayload) =>
-      apiFetch<{ project: Project }>("/projects", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      setName("");
-      setDescription("");
-      setIsModalOpen(false);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (projectId: number) =>
-      apiFetch<void>(`/projects/${projectId}`, { method: "DELETE" }),
-    onSuccess: (_data, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      // If the deleted project was the current one, clear it
-      if (currentProject?.id === deletedId) {
-        clearCurrentProject();
-      }
-      setDeleteTarget(null);
-    },
-  });
+  const createMutation = useCreateProject();
+  const deleteMutation = useDeleteProject();
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    createMutation.mutate({
-      name: name.trim(),
-      description: description.trim() || undefined,
-    });
+    createMutation.mutate(
+      {
+        name: name.trim(),
+        description: description.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          setName("");
+          setDescription("");
+          setIsModalOpen(false);
+        },
+      }
+    );
   };
 
   const handleSelectProject = (project: Project) => {
@@ -88,7 +54,15 @@ export default function Projects() {
 
   const handleDeleteConfirm = () => {
     if (deleteTarget) {
-      deleteMutation.mutate(deleteTarget.id);
+      deleteMutation.mutate(deleteTarget.id, {
+        onSuccess: () => {
+          // If the deleted project was the current one, clear it
+          if (currentProject?.id === deleteTarget.id) {
+            clearCurrentProject();
+          }
+          setDeleteTarget(null);
+        },
+      });
     }
   };
 
@@ -146,7 +120,7 @@ export default function Projects() {
           </p>
           <button
             onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["projects"] })
+              queryClient.invalidateQueries({ queryKey: queryKeys.projects })
             }
             className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
           >

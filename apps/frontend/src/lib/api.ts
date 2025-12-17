@@ -1,6 +1,22 @@
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 /**
+ * Custom error class that includes HTTP status code.
+ * Allows callers (e.g. QueryClient) to detect auth failures (401/419).
+ */
+export class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+
+  /** Returns true for 401 Unauthorized or 419 CSRF token mismatch */
+  get isAuthError(): boolean {
+    return this.status === 401 || this.status === 419;
+  }
+}
+
+/**
  * Ensures the CSRF cookie is set before making state-changing requests.
  */
 async function ensureCsrf(): Promise<void> {
@@ -16,6 +32,7 @@ async function ensureCsrf(): Promise<void> {
  * - Sets JSON content-type for bodies
  * - Fetches CSRF cookie before mutations
  * - Parses JSON responses
+ * - Throws ApiError with status on failures
  */
 export async function apiFetch<T>(
   path: string,
@@ -53,7 +70,7 @@ export async function apiFetch<T>(
     } catch {
       // ignore
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
 
   // Handle 204 No Content

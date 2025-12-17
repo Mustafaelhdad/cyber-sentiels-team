@@ -1,50 +1,10 @@
+import { useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useCurrentProject } from "@/hooks/useCurrentProject";
-import { useEffect } from "react";
-
-interface RunTask {
-  id: number;
-  run_id: number;
-  tool: string;
-  status: string;
-  progress: number;
-  has_report: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Run {
-  id: number;
-  user_id: number;
-  project_id: number;
-  module: string;
-  target_type: string;
-  target_value: string;
-  status: string;
-  started_at: string | null;
-  finished_at: string | null;
-  tasks: RunTask[];
-  created_at: string;
-  updated_at: string;
-}
-
-interface RunsResponse {
-  data: Run[];
-}
-
-interface Project {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProjectResponse {
-  project: Project;
-}
+import { useProject, useProjectRuns, queryKeys } from "@/hooks/useApiQueries";
+import { queryClient } from "@/lib/queryClient";
 
 const STATUS_COLORS: Record<string, string> = {
   pending:
@@ -88,19 +48,14 @@ function formatDateTime(iso: string | null): string {
 export default function ProjectRuns() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { setCurrentProject } = useCurrentProject();
 
-  // Fetch project details to set current project context
+  // Use shared hooks
   const {
     data: projectData,
     isLoading: projectLoading,
     isError: projectError,
-  } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => apiFetch<ProjectResponse>(`/projects/${projectId}`),
-    enabled: !!projectId,
-  });
+  } = useProject(projectId);
 
   const project = projectData?.project;
 
@@ -111,18 +66,13 @@ export default function ProjectRuns() {
     }
   }, [project, setCurrentProject]);
 
-  // Fetch runs for the project
+  // Fetch runs using shared hook (includes smart polling)
   const {
     data: runsData,
     isLoading: runsLoading,
     isError: runsError,
     error: runsErrorObj,
-  } = useQuery({
-    queryKey: ["runs", projectId],
-    queryFn: () => apiFetch<RunsResponse>(`/projects/${projectId}/runs`),
-    enabled: !!projectId,
-    refetchInterval: 5000, // Poll for status updates
-  });
+  } = useProjectRuns(projectId);
 
   const runs = runsData?.data ?? [];
 
@@ -133,7 +83,7 @@ export default function ProjectRuns() {
         method: "POST",
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["runs", projectId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs(projectId!) });
     },
   });
 
@@ -285,7 +235,9 @@ export default function ProjectRuns() {
           </p>
           <button
             onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["runs", projectId] })
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.runs(projectId!),
+              })
             }
             className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
           >
