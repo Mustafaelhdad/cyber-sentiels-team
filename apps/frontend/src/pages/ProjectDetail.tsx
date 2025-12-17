@@ -13,7 +13,7 @@ interface Project {
 }
 
 interface ProjectResponse {
-  data: Project;
+  project: Project;
 }
 
 const moduleLinks = [
@@ -98,7 +98,7 @@ export default function ProjectDetail() {
     enabled: !!projectId,
   });
 
-  const project = projectData?.data;
+  const project = projectData?.project;
 
   // Set as current project when loaded
   useEffect(() => {
@@ -250,11 +250,32 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Recent Activity Placeholder */}
+      {/* Recent Activity / Runs History */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Recent Activity
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Recent Activity
+          </h2>
+          <Link
+            to={`/projects/${projectId}/runs`}
+            className="inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+          >
+            View All Runs
+            <svg
+              className="ml-1 h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </Link>
+        </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
           No recent runs for this project. Start a security scan from one of the
           modules above.

@@ -12,6 +12,8 @@ import Monitoring from "@/pages/Monitoring";
 import IAM from "@/pages/IAM";
 import Projects from "@/pages/Projects";
 import ProjectDetail from "@/pages/ProjectDetail";
+import ProjectRuns from "@/pages/ProjectRuns";
+import RunDetail from "@/pages/RunDetail";
 import NotFound from "@/pages/NotFound";
 
 export const router = createBrowserRouter([
@@ -40,6 +42,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ProjectDetail />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "projects/:projectId/runs",
+        element: (
+          <ProtectedRoute>
+            <ProjectRuns />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "projects/:projectId/runs/:runId",
+        element: (
+          <ProtectedRoute>
+            <RunDetail />
           </ProtectedRoute>
         ),
       },
