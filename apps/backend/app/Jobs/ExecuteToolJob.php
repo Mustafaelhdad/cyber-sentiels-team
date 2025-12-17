@@ -38,7 +38,9 @@ class ExecuteToolJob implements ShouldQueue
    */
   public function handle(ZapService $zapService, RunService $runService): void
   {
+    // Generic: mark task as running with 0% progress
     $this->task->markAsStarted();
+    $this->task->updateProgress(0);
 
     try {
       match ($this->task->tool) {
@@ -65,6 +67,9 @@ class ExecuteToolJob implements ShouldQueue
   {
     $targetUrl = $this->task->run->target_value;
 
+    // Generic: 10% - starting tool
+    $this->task->updateProgress(10);
+
     // Check ZAP availability
     if (!$zapService->isAvailable()) {
       throw new \Exception('ZAP service is not available');
@@ -72,7 +77,7 @@ class ExecuteToolJob implements ShouldQueue
 
     // Start fresh session
     $zapService->newSession();
-    $this->task->updateProgress(5);
+    $this->task->updateProgress(20);
 
     // Run spider
     $spiderId = $zapService->startSpider($targetUrl);
@@ -80,9 +85,12 @@ class ExecuteToolJob implements ShouldQueue
       throw new \Exception('Failed to start spider scan');
     }
 
+    // Generic: 30% - spider started
+    $this->task->updateProgress(30);
+
     // Wait for spider to complete
     $this->waitForSpider($zapService, $spiderId);
-    $this->task->updateProgress(40);
+    $this->task->updateProgress(50);
 
     // Run active scan
     $scanId = $zapService->startActiveScan($targetUrl);
@@ -90,14 +98,18 @@ class ExecuteToolJob implements ShouldQueue
       throw new \Exception('Failed to start active scan');
     }
 
+    // Generic: 60% - active scan started
+    $this->task->updateProgress(60);
+
     // Wait for active scan to complete
     $this->waitForActiveScan($zapService, $scanId);
-    $this->task->updateProgress(90);
+    $this->task->updateProgress(80);
 
     // Generate reports
     $reportFile = $zapService->generateJsonReport($this->task);
     $zapService->generateHtmlReport($this->task);
 
+    // Generic: 100% via markAsCompleted
     $this->task->markAsCompleted($reportFile);
   }
 
@@ -117,8 +129,8 @@ class ExecuteToolJob implements ShouldQueue
         return;
       }
 
-      // Update progress (5-40% range for spider)
-      $progress = 5 + (int) ($status * 0.35);
+      // Generic progress: 30-50% range for spider
+      $progress = 30 + (int) ($status * 0.20);
       $this->task->updateProgress($progress);
 
       sleep($interval);
@@ -144,8 +156,8 @@ class ExecuteToolJob implements ShouldQueue
         return;
       }
 
-      // Update progress (40-90% range for active scan)
-      $progress = 40 + (int) ($status * 0.50);
+      // Generic progress: 60-80% range for active scan
+      $progress = 60 + (int) ($status * 0.20);
       $this->task->updateProgress($progress);
 
       sleep($interval);
@@ -169,4 +181,3 @@ class ExecuteToolJob implements ShouldQueue
     $this->task->markAsFailed($exception->getMessage());
   }
 }
-

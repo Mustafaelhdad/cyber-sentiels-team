@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Jobs\ExecuteToolJob;
+use App\Jobs\RunCreatedJob;
 use App\Models\Project;
 use App\Models\Run;
 use App\Models\RunTask;
@@ -37,8 +37,8 @@ class RunService
     // Create tasks based on module
     $this->createTasksForModule($run, $data['module']);
 
-    // Dispatch jobs for each task
-    $this->dispatchJobs($run);
+    // Dispatch RunCreatedJob to handle task execution
+    RunCreatedJob::dispatch($run);
 
     return $run;
   }
@@ -72,22 +72,6 @@ class RunService
     };
   }
 
-  /**
-   * Dispatch jobs for run tasks.
-   */
-  protected function dispatchJobs(Run $run): void
-  {
-    foreach ($run->tasks as $task) {
-      ExecuteToolJob::dispatch($task);
-    }
-
-    // Mark run as started if it has tasks
-    if ($run->tasks->count() > 0) {
-      $run->markAsStarted();
-    } else {
-      $run->markAsCompleted();
-    }
-  }
 
   /**
    * Cancel a run.
