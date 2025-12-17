@@ -81,6 +81,28 @@ class ReportService
   }
 
   /**
+   * Find a task by tool for a given run.
+   */
+  public function findTaskByTool(Run $run, string $tool): ?RunTask
+  {
+    return $run->tasks()->where('tool', $tool)->first();
+  }
+
+  /**
+   * Check if report format is JSON based on file extension.
+   */
+  public function isJsonReport(RunTask $task): bool
+  {
+    $filePath = $this->getReportFilePath($task);
+
+    if (!$filePath) {
+      return false;
+    }
+
+    return strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'json';
+  }
+
+  /**
    * Get normalized findings from a run.
    */
   public function getFindings(Run $run): array

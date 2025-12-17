@@ -52,11 +52,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/runs', [RunController::class, 'index']);
     Route::post('/runs', [RunController::class, 'store']);
     Route::get('/runs/{run}', [RunController::class, 'show']);
+    Route::get('/runs/{run}/tasks', [RunController::class, 'tasks']);
     Route::post('/runs/{run}/cancel', [RunController::class, 'cancel']);
 
     // Reports
     Route::get('/runs/{run}/summary', [ReportController::class, 'summary']);
     Route::get('/runs/{run}/findings', [ReportController::class, 'findings']);
+    Route::get('/runs/{run}/report', [ReportController::class, 'runReport']);
     Route::get('/runs/{run}/tasks/{task}/report', [ReportController::class, 'taskReport']);
     Route::get('/runs/{run}/tasks/{task}/download', [ReportController::class, 'download']);
   });

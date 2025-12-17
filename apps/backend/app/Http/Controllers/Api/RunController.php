@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Run\StoreRunRequest;
 use App\Http\Resources\RunResource;
+use App\Http\Resources\RunTaskResource;
 use App\Models\Project;
 use App\Models\Run;
 use App\Services\RunService;
@@ -71,5 +72,16 @@ class RunController extends Controller
       'run' => new RunResource($run->fresh()->load('tasks')),
     ]);
   }
-}
 
+  /**
+   * Display the tasks for a specific run.
+   */
+  public function tasks(Project $project, Run $run): JsonResponse
+  {
+    $this->authorize('view', $project);
+
+    return response()->json([
+      'tasks' => RunTaskResource::collection($run->tasks),
+    ]);
+  }
+}

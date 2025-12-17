@@ -8,6 +8,7 @@ use App\Models\Run;
 use App\Models\RunTask;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -82,5 +83,54 @@ class ReportController extends Controller
       'findings' => $findings,
     ]);
   }
-}
 
+  /**
+   * Get report for a run by tool.
+   */
+  public function runReport(Request $request, Project $project, Run $run): BinaryFileResponse|JsonResponse
+  {
+    $this->authorize('view', $project);
+
+    // Validate required tool query param
+    $tool = $request->query('tool');
+
+    if (empty($tool)) {
+      return response()->json([
+        'message' => 'The tool query parameter is required',
+      ], 400);
+    }
+
+    // Find task by tool
+    $task = $run->tasks()->where('tool', $tool)->first();
+
+    if (!$task) {
+      return response()->json([
+        'message' => 'No task found for the specified tool',
+      ], 404);
+    }
+
+    // Check if report exists
+    $filePath = $this->reportService->getReportFilePath($task);
+
+    if (!$filePath) {
+      return response()->json([
+        'message' => 'Report not available for this tool',
+      ], 404);
+    }
+
+    // Determine format and return accordingly
+    $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+
+    if ($extension === 'json') {
+      // Return parsed JSON
+      $report = $this->reportService->getTaskReport($task);
+
+      return response()->json([
+        'report' => $report,
+      ]);
+    }
+
+    // For non-JSON formats (HTML, XML, etc.), force download
+    return response()->download($filePath);
+  }
+}
