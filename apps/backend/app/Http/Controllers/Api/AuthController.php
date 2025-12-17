@@ -36,7 +36,7 @@ class AuthController extends Controller
   }
 
   /**
-   * Login user (token-based auth for API clients).
+   * Login user (token-based auth).
    */
   public function login(LoginRequest $request): JsonResponse
   {
@@ -48,11 +48,15 @@ class AuthController extends Controller
       ], 401);
     }
 
+    // Regenerate session to prevent fixation attacks (only if session is available)
+    if ($request->hasSession()) {
+      $request->session()->regenerate();
+    }
+
     return response()->json([
       'message' => 'Login successful',
       'user' => new UserResource($result['user']),
       'token' => $result['token'],
-      'token_type' => 'Bearer',
     ]);
   }
 
