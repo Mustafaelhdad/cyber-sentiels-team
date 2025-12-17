@@ -45,11 +45,17 @@ A unified cybersecurity platform that integrates multiple security tools under o
 # 1. Copy environment file
 cp .env.example .env
 
-# 2. Start services
-docker-compose up -d
+# 2. Start services (local)
+docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.local.yml up -d
 
 # 2b. Start with phpMyAdmin (optional)
 docker-compose --profile admin up -d
+
+# Staging
+docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.staging.yml up -d
+
+# Production
+docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.prod.yml up -d
 
 # 3. Install backend dependencies
 docker-compose exec backend composer install

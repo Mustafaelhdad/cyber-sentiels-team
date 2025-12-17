@@ -1,0 +1,39 @@
+# LOCAL DEVELOPMENT OVERRIDES
+# Usage: docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.local.yml up -d
+
+version: "3.8"
+
+services:
+  backend:
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  queue:
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - LOG_LEVEL=debug
+
+  scheduler:
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  # Enable Xdebug for local development
+  # backend:
+  #   build:
+  #     args:
+  #       - XDEBUG_ENABLED=true
+
+  mysql:
+    ports:
+      - "3306:3306"
+
+  redis:
+    ports:
+      - "6379:6379"
+
