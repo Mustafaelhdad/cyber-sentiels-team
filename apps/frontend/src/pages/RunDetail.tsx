@@ -9,7 +9,6 @@ import {
   useRunTasks,
   useCancelRun,
   type RunTask,
-  type Run,
 } from "@/hooks/useApiQueries";
 
 interface LogsResponse {
@@ -804,16 +803,18 @@ function TaskStatusPanel({ task }: { task: RunTask }) {
       </div>
 
       {/* Error Message for Failed Tasks */}
-      {task.status === "failed" && task.meta_json?.error && (
-        <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <h4 className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">
-            Error Details
-          </h4>
-          <p className="text-sm text-red-600 dark:text-red-400">
-            {String(task.meta_json.error)}
-          </p>
-        </div>
-      )}
+      {task.status === "failed" &&
+        task.meta_json !== null &&
+        "error" in task.meta_json && (
+          <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <h4 className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">
+              Error Details
+            </h4>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {String(task.meta_json.error)}
+            </p>
+          </div>
+        )}
 
       {/* Meta JSON */}
       {task.meta_json &&

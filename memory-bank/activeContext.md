@@ -32,6 +32,20 @@
   - MySQL port changed to 3307 to avoid conflict with local installations
   - Backend `.env` configured with `ZAP_HOST=http://zap:8080`
   - ZAP setup documentation created at `docs/ZAP_SETUP.md`
+- **ModSecurity WAF + OWASP CRS implemented:**
+  - WAF container as entry point (ports 80/443)
+  - Nginx moved behind WAF on internal port 8080
+  - TLS termination at WAF layer
+  - Configurable modes: DetectionOnly (staging) vs On (prod)
+  - Paranoia levels 1-4 for rule strictness
+  - Application-specific exclusions for Laravel/Sanctum
+  - Let's Encrypt certificate scripts ready
+- **Hostinger VPS deployment ready:**
+  - Ubuntu 24.04 LTS setup script
+  - Staging: staging.cybersentinels.cloud
+  - Production: cybersentinels.cloud
+  - Certbot automation with renewal cron
+  - Full deployment documentation at `docs/DEPLOYMENT.md`
 
 ## Immediate Next Actions (to be done next)
 

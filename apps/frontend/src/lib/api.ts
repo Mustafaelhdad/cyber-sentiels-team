@@ -6,9 +6,12 @@ const AUTH_TOKEN_KEY = "auth_token";
  * Allows callers (e.g. QueryClient) to detect auth failures (401/419).
  */
 export class ApiError extends Error {
-  constructor(message: string, public status: number) {
+  status: number;
+
+  constructor(message: string, status: number) {
     super(message);
     this.name = "ApiError";
+    this.status = status;
   }
 
   /** Returns true for 401 Unauthorized or 419 CSRF token mismatch */

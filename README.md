@@ -16,7 +16,8 @@ A unified cybersecurity platform that integrates multiple security tools under o
 - **Backend**: Laravel 11 + Sanctum + Horizon
 - **Database**: MySQL 8.0
 - **Cache/Queue**: Redis
-- **Proxy**: Nginx
+- **WAF**: ModSecurity + OWASP Core Rule Set
+- **Proxy**: Nginx (behind WAF)
 - **Containers**: Docker Compose
 
 ## Project Structure
@@ -28,15 +29,18 @@ A unified cybersecurity platform that integrates multiple security tools under o
 │   └── backend/       # Laravel API
 ├── infra/
 │   ├── docker/
-│   │   ├── compose/   # compose overrides
-│   │   ├── nginx/     # nginx configs
+│   │   ├── compose/   # compose overrides (local/staging/prod)
+│   │   ├── nginx/     # nginx configs (behind WAF)
 │   │   ├── php/       # PHP Dockerfile
-│   │   └── tools/     # ZAP, ModSecurity, etc.
-│   └── scripts/       # deploy, backup scripts
-├── memory-bank/       # project documentation
-├── storage/           # reports, artifacts
+│   │   ├── waf/       # ModSecurity + OWASP CRS configs
+│   │   └── tools/     # ZAP, etc.
+│   ├── env/           # environment files (local/staging/prod)
+│   └── scripts/       # deploy, cert, setup scripts
+├── docs/              # documentation
+├── memory-bank/       # project context
+├── storage/           # reports, artifacts, logs
 ├── docker-compose.yml
-└── .env.example
+└── env.example
 ```
 
 ## Quick Start
@@ -69,13 +73,16 @@ cd apps/frontend && npm install && npm run build
 
 ## Services
 
-| Service    | Port | Description                                   |
-| ---------- | ---- | --------------------------------------------- |
-| Nginx      | 80   | Reverse proxy                                 |
-| MySQL      | 3307 | Database (3307 to avoid local MySQL conflict) |
-| phpMyAdmin | 8080 | DB Admin (optional)                           |
-| Redis      | 6379 | Cache & Queue                                 |
-| ZAP        | 8081 | DAST Scanner                                  |
+| Service    | Port     | Description                                   |
+| ---------- | -------- | --------------------------------------------- |
+| WAF        | 80, 443  | ModSecurity + OWASP CRS (entry point)         |
+| Nginx      | internal | App reverse proxy (behind WAF)                |
+| MySQL      | 3307     | Database (3307 to avoid local MySQL conflict) |
+| phpMyAdmin | 8080     | DB Admin (optional, local only)               |
+| Redis      | 6379     | Cache & Queue                                 |
+| ZAP        | 8081     | DAST Scanner                                  |
+
+> **Architecture**: Internet → WAF (TLS termination + request inspection) → Nginx → Laravel/React
 
 > **Note**: MySQL uses port 3307 externally to avoid conflicts with local MySQL installations. Internally (within Docker network), it remains on port 3306.
 
@@ -92,8 +99,29 @@ docker-compose logs -f queue
 cd apps/frontend && npm run dev
 ```
 
+## WAF Configuration
+
+The WAF runs ModSecurity with OWASP Core Rule Set. Configure via environment variables:
+
+| Variable       | Values               | Description                     |
+| -------------- | -------------------- | ------------------------------- |
+| `WAF_MODE`     | `DetectionOnly`/`On` | Detection only or blocking mode |
+| `WAF_PARANOIA` | `1`-`4`              | Rule strictness (1=minimal FP)  |
+
+**Local/Staging**: `DetectionOnly` mode (logs but doesn't block)
+**Production**: `On` mode (active blocking)
+
+```bash
+# View WAF logs
+docker-compose logs -f waf
+
+# Check audit log for blocked requests
+docker-compose exec waf cat /var/log/modsecurity/modsec_audit.log
+```
+
 ## Documentation
 
+- [Deployment Guide](docs/DEPLOYMENT.md) - Complete VPS deployment with WAF & TLS
 - [ZAP (DAST) Setup Guide](docs/ZAP_SETUP.md) - Complete guide for running DAST scans
 
 ## License

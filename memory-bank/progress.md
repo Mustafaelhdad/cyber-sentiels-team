@@ -4,6 +4,7 @@
 
 - Phase 0 (Repo & Docker Baseline) completed.
 - Phase 1a (Laravel Backend Setup) completed.
+- Phase 1c (WAF Integration + VPS Deployment Ready) completed.
 - Ready for Phase 1b: Frontend Setup + Auth Flow Integration.
 
 ## Completed
@@ -36,6 +37,19 @@
   - `RunLogStreamService` handles snapshot/history/tail/heartbeat/done events
   - `ZapService::log()` helper for structured log lines
   - `ExecuteToolJob` instrumented to emit logs at all milestones
+- **ModSecurity WAF + OWASP CRS:**
+  - `waf` Docker service as entry point (80/443)
+  - `nginx` moved to internal port 8080 behind WAF
+  - TLS termination at WAF with Let's Encrypt integration
+  - Environment-driven: `WAF_MODE` (DetectionOnly/On), `WAF_PARANOIA` (1-4)
+  - Application exclusions for Sanctum/API endpoints
+  - Configs at `infra/docker/waf/`
+- **VPS Deployment Ready (Hostinger Ubuntu 24.04):**
+  - Setup script: `infra/scripts/setup-vps.sh`
+  - Certificate scripts: `issue-certs.sh`, `renew-certs.sh`
+  - Deploy script: `deploy.sh [staging|prod]`
+  - Domains: cybersentinels.cloud, staging.cybersentinels.cloud
+  - Full documentation: `docs/DEPLOYMENT.md`
 
 ## Next Milestones
 
