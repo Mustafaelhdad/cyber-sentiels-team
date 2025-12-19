@@ -11,10 +11,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./infra/docker/waf/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/docker/waf/nginx.conf:/etc/nginx/templates/conf.d/default.conf.template:ro
       - ./infra/docker/waf/proxy_params.conf:/etc/nginx/includes/proxy_params.conf:ro
-      - ./infra/docker/waf/modsecurity.conf:/etc/modsecurity.d/modsecurity-override.conf:ro
-      - ./infra/docker/waf/crs-setup.conf:/etc/modsecurity.d/owasp-crs/crs-setup.conf:ro
+      - ./infra/docker/waf/modsecurity.conf:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template:ro
+      - ./infra/docker/waf/crs-setup.conf:/etc/nginx/templates/modsecurity.d/setup.conf.template:ro
       - waf_logs:/var/log/modsecurity
       - certbot_www:/var/www/certbot:ro
       - certbot_certs:/etc/nginx/ssl:ro
