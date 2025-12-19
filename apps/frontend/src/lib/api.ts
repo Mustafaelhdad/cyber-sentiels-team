@@ -118,7 +118,14 @@ export async function apiFetch<T>(
       const json = JSON.parse(text);
       message = json.message || message;
     } catch {
-      // ignore
+      // Check if response is HTML (server error)
+      if (
+        text.includes("<") &&
+        (text.includes("<br") || text.includes("<!") || text.includes("<html"))
+      ) {
+        message =
+          "Server error: The server returned an HTML response instead of JSON. Please check the backend logs.";
+      }
     }
     throw new ApiError(message, res.status);
   }
@@ -128,7 +135,28 @@ export async function apiFetch<T>(
     return undefined as T;
   }
 
-  return res.json() as Promise<T>;
+  // Try to parse JSON, with better error handling for HTML responses
+  const text = await res.text();
+
+  // Check if response is HTML instead of JSON
+  if (
+    text.includes("<") &&
+    (text.includes("<br") || text.includes("<!") || text.includes("<html"))
+  ) {
+    throw new ApiError(
+      "Server error: The server returned an HTML response instead of JSON. Please check the backend logs.",
+      500
+    );
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiError(
+      `Invalid JSON response from server: ${text.substring(0, 100)}...`,
+      500
+    );
+  }
 }
 
 /**
