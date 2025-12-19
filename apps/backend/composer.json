@@ -12,6 +12,7 @@
     "php": "^8.2",
     "guzzlehttp/guzzle": "^7.8",
     "laravel/framework": "^11.0",
+    "laravel/horizon": "^5.41",
     "laravel/sanctum": "^4.0",
     "laravel/tinker": "^2.9",
     "predis/predis": "^3.3"

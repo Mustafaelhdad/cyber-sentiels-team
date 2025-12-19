@@ -1,14 +1,16 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "../lib/api";
+import { apiFetch, setAuthToken } from "../lib/api";
 
 interface LoginResponse {
   message: string;
+  token: string;
   user: {
     id: number;
     name: string;
     email: string;
+    role: string;
   };
 }
 
@@ -36,6 +38,8 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      // Store the auth token for subsequent API requests
+      setAuthToken(response.token);
       // Seed the auth cache with the returned user to prevent redirect flicker
       queryClient.setQueryData(["auth", "user"], { user: response.user });
       navigate(from, { replace: true });

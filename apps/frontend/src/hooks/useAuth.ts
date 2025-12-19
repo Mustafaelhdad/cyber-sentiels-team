@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, clearAuthToken, getAuthToken } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
 
 interface User {
   id: number;
@@ -16,10 +17,15 @@ interface AuthResponse {
  * - Fetches current user from /api/auth/user (Sanctum SPA endpoint)
  * - Provides login/logout mutations
  * - Can be used for route protection
- * - Auth errors (401/419) are handled globally by queryClient
+ * - Auth errors (401/419) are handled by ProtectedRoute, not global redirect
  */
 export function useAuth() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+
+  // Check if we have cached data (e.g., just logged in)
+  const cachedData = queryClient.getQueryData<AuthResponse>(["auth", "user"]);
+  // Check if we have a token stored
+  const hasToken = !!getAuthToken();
 
   const {
     data: userData,
@@ -29,6 +35,8 @@ export function useAuth() {
   } = useQuery({
     queryKey: ["auth", "user"],
     queryFn: () => apiFetch<AuthResponse>("/auth/user"),
+    // Only fetch if we have a token (prevents unnecessary 401 errors)
+    enabled: hasToken || !!cachedData,
     retry: (failureCount, err) => {
       // Don't retry auth errors
       if (err instanceof ApiError && err.isAuthError) {
@@ -37,6 +45,8 @@ export function useAuth() {
       return failureCount < 1;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    // If we have cached data (from login), don't refetch immediately
+    refetchOnMount: cachedData ? false : true,
   });
 
   const logoutMutation = useMutation({
@@ -45,20 +55,23 @@ export function useAuth() {
         method: "POST",
       }),
     onSuccess: () => {
+      // Clear the auth token
+      clearAuthToken();
       // Clear auth cache and all user-related data
-      queryClient.setQueryData(["auth", "user"], null);
-      queryClient.removeQueries({ queryKey: ["auth"] });
+      qc.setQueryData(["auth", "user"], null);
+      qc.removeQueries({ queryKey: ["auth"] });
       // Clear project/run data as well since user is logged out
-      queryClient.removeQueries({ queryKey: ["projects"] });
-      queryClient.removeQueries({ queryKey: ["project"] });
-      queryClient.removeQueries({ queryKey: ["runs"] });
-      queryClient.removeQueries({ queryKey: ["run"] });
-      queryClient.removeQueries({ queryKey: ["tasks"] });
+      qc.removeQueries({ queryKey: ["projects"] });
+      qc.removeQueries({ queryKey: ["project"] });
+      qc.removeQueries({ queryKey: ["runs"] });
+      qc.removeQueries({ queryKey: ["run"] });
+      qc.removeQueries({ queryKey: ["tasks"] });
     },
     onError: () => {
       // Even if logout fails, clear local auth state
-      queryClient.setQueryData(["auth", "user"], null);
-      queryClient.removeQueries({ queryKey: ["auth"] });
+      clearAuthToken();
+      qc.setQueryData(["auth", "user"], null);
+      qc.removeQueries({ queryKey: ["auth"] });
     },
   });
 

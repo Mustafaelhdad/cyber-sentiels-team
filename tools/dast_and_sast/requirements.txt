@@ -1,0 +1,16 @@
+# requirements.txt
+# Minimal set of packages used by the project (SAST, DAST, RASP, GUI, reporting)
+
+Flask>=2.0                # web framework used by vulnerable_flask_app.py and demo RASP app
+PyYAML>=5.4               # read YAML config files (sast_rules.yaml, dast_payloads.yaml, rasp_config.yaml)
+requests>=2.28           # HTTP client used by DAST scanner and proxy implementations
+beautifulsoup4>=4.9      # HTML parsing for crawler in DAST
+lxml>=4.9                # faster/robust parser for BeautifulSoup (optional but recommended)
+customtkinter>=5.2.2       # modern Tkinter-based GUI theme (gui_app.py uses customtkinter)
+jinja2>=3.0              # templating if report generator uses HTML templates (common)
+python-dotenv>=0.21.0    # optional: load env vars (useful for secrets in demos)
+typing-extensions>=4.0   # sometimes required for newer type hints on older Python versions
+
+# Optional / useful tools for development & testing
+pytest>=7.0              # tests (optional)
+gunicorn>=20.0           # production WSGI server (optional, for demoing with real server)

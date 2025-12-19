@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RASP Security Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <header>
+    <h1> RASP Security Dashboard</h1>
+  </header>
+
+  <main>
+    <h2>Detected Security Events</h2>
+    <table id="events-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Threat Type</th>
+          <th>Source</th>
+          <th>Parameter</th>
+          <th>Value Snippet</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="5" class="loading-msg">Loading events...</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  
+
+  <script>
+    async function loadEvents() {
+      try {
+        const res = await fetch('http://127.0.0.1:9000/rasp/incidents');
+        if (!res.ok) throw new Error('Failed to load data');
+        const incidents = await res.json();
+        const tbody = document.querySelector('#events-table tbody');
+        tbody.innerHTML = '';
+
+        if (incidents.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="loading-msg">No incidents detected yet.</td></tr>`;
+          return;
+        }
+
+        incidents.forEach(inc => {
+          const date = new Date(inc.ts * 1000).toLocaleString();
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${date}</td>
+            <td class="${inc.finding_type.includes('xss') || inc.finding_type.includes('injection') ? 'danger' : 'safe'}">
+              ${inc.finding_type.toUpperCase()}
+            </td>
+            <td>${inc.source}</td>
+            <td>${inc.param}</td>
+            <td>${inc.value_snippet}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setInterval(loadEvents, 5000);
+    loadEvents();
+  </script>
+</body>
+</html>

@@ -69,13 +69,15 @@ cd apps/frontend && npm install && npm run build
 
 ## Services
 
-| Service    | Port | Description         |
-| ---------- | ---- | ------------------- |
-| Nginx      | 80   | Reverse proxy       |
-| MySQL      | 3306 | Database            |
-| phpMyAdmin | 8080 | DB Admin (optional) |
-| Redis      | 6379 | Cache & Queue       |
-| ZAP        | 8081 | DAST Scanner        |
+| Service    | Port | Description                                   |
+| ---------- | ---- | --------------------------------------------- |
+| Nginx      | 80   | Reverse proxy                                 |
+| MySQL      | 3307 | Database (3307 to avoid local MySQL conflict) |
+| phpMyAdmin | 8080 | DB Admin (optional)                           |
+| Redis      | 6379 | Cache & Queue                                 |
+| ZAP        | 8081 | DAST Scanner                                  |
+
+> **Note**: MySQL uses port 3307 externally to avoid conflicts with local MySQL installations. Internally (within Docker network), it remains on port 3306.
 
 ## Development
 
@@ -89,6 +91,10 @@ docker-compose logs -f queue
 # Frontend dev server
 cd apps/frontend && npm run dev
 ```
+
+## Documentation
+
+- [ZAP (DAST) Setup Guide](docs/ZAP_SETUP.md) - Complete guide for running DAST scans
 
 ## License
 

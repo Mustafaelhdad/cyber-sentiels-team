@@ -8,11 +8,19 @@ interface ProtectedRouteProps {
 /**
  * Wrapper component that redirects unauthenticated users to login.
  * Shows a loading state while checking authentication.
+ * If user data is already in cache (e.g., just logged in), renders immediately.
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
+  // If we have a user (from cache or fetch), render immediately
+  // This prevents redirect flicker after login
+  if (user) {
+    return <>{children}</>;
+  }
+
+  // Only show loading if we're actually loading and don't have cached user
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -24,6 +32,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // No user and not loading = definitely not authenticated
   if (!isAuthenticated) {
     // Redirect to login, preserving the intended destination
     return <Navigate to="/login" state={{ from: location }} replace />;

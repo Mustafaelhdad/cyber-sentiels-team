@@ -13,10 +13,12 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
 };
 
+type TargetType = "url" | "repo";
+
 export default function WebSecurity() {
   const { currentProject } = useCurrentProject();
-  const [targetUrl, setTargetUrl] = useState("");
-  const [scanType, setScanType] = useState("baseline");
+  const [targetType, setTargetType] = useState<TargetType>("url");
+  const [targetValue, setTargetValue] = useState("");
 
   // Only enable hooks when project is selected
   const createRunMutation = useCreateRun(currentProject?.id ?? 0);
@@ -31,13 +33,12 @@ export default function WebSecurity() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentProject || !targetUrl.trim()) return;
+    if (!currentProject || !targetValue.trim()) return;
 
     createRunMutation.mutate({
       module: "web_security",
-      target_type: "url",
-      target_value: targetUrl.trim(),
-      meta: { scan_type: scanType },
+      target_type: targetType,
+      target_value: targetValue.trim(),
     });
   };
 
@@ -107,46 +108,70 @@ export default function WebSecurity() {
         </h2>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          {/* Target Type Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target Type
+            </label>
+            <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 w-fit">
+              <button
+                type="button"
+                onClick={() => {
+                  setTargetType("url");
+                  setTargetValue("");
+                }}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  targetType === "url"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+              >
+                Website URL
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTargetType("repo");
+                  setTargetValue("");
+                }}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                  targetType === "repo"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+              >
+                Git Repo
+              </button>
+            </div>
+          </div>
+
+          {/* Target Input */}
           <div>
             <label
-              htmlFor="target-url"
+              htmlFor="target-value"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Target URL
+              {targetType === "url" ? "Target URL" : "Git Repository URL"}
             </label>
             <input
-              id="target-url"
-              name="target-url"
+              id="target-value"
+              name="target-value"
               type="url"
-              placeholder="https://example.com"
+              placeholder={
+                targetType === "url"
+                  ? "https://example.com"
+                  : "https://github.com/owner/repo"
+              }
               required
-              value={targetUrl}
-              onChange={(e) => setTargetUrl(e.target.value)}
+              value={targetValue}
+              onChange={(e) => setTargetValue(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             />
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Enter the URL of the web application you want to scan.
+              {targetType === "url"
+                ? "Enter the URL of the web application you want to scan (WAF + DAST)."
+                : "Enter the Git repository URL to analyze (SAST)."}
             </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="scan-type"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Scan Type
-            </label>
-            <select
-              id="scan-type"
-              name="scan-type"
-              value={scanType}
-              onChange={(e) => setScanType(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="baseline">Baseline Scan (Quick)</option>
-              <option value="full">Full Scan (Comprehensive)</option>
-              <option value="api">API Scan</option>
-            </select>
           </div>
 
           {createRunMutation.isError && (
@@ -157,7 +182,7 @@ export default function WebSecurity() {
 
           <button
             type="submit"
-            disabled={createRunMutation.isPending || !targetUrl.trim()}
+            disabled={createRunMutation.isPending || !targetValue.trim()}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {createRunMutation.isPending ? (

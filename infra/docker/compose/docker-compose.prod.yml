@@ -1,8 +1,6 @@
 # PRODUCTION ENVIRONMENT OVERRIDES
 # Usage: docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.prod.yml up -d
 
-version: "3.8"
-
 services:
   nginx:
     ports:
@@ -51,7 +49,7 @@ services:
           memory: 256M
 
   mysql:
-    ports: []  # No external access in production
+    ports: [] # No external access in production
     restart: always
     deploy:
       resources:
@@ -59,7 +57,7 @@ services:
           memory: 1G
 
   redis:
-    ports: []  # No external access in production
+    ports: [] # No external access in production
     restart: always
     deploy:
       resources:
@@ -68,10 +66,10 @@ services:
 
   zap:
     profiles:
-      - tools  # Only start when explicitly needed
+      - tools # Only start when explicitly needed
     restart: "no"
 
   phpmyadmin:
     profiles:
-      - never  # Disabled in production
+      - never # Disabled in production
 

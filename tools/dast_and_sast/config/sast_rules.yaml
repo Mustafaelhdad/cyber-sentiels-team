@@ -1,0 +1,45 @@
+
+# This file defines a set of rules for the Static Application Security Testing (SAST) engine.
+# Each rule identifies a potential security vulnerability pattern in the source code.
+
+
+rules:
+  - id: SAST001
+    name: "Potential SQL Injection (PHP Generic)"
+    description: "Detects direct usage of user-controlled superglobals like $_GET or $_POST in database queries, which is a primary vector for SQL Injection. Always use parameterized queries."
+    pattern: 'mysql_query\s*\(.*\$_(GET|POST|REQUEST)\[.*?\].*\)'
+    severity: "High"
+    language: "php"
+    cwe: "CWE-89"
+
+  - id: SAST002
+    name: "Potential SQL Injection (Python F-String)"
+    description: "Using f-strings or string formatting to build SQL queries is highly dangerous and can lead to SQL Injection. Use parameterized queries provided by your database library instead."
+    pattern: '\.execute\s*\(\s*f["''](.*\{.*\}.*)["'']\s*\)'
+    severity: "High"
+    language: "python"
+    cwe: "CWE-89"
+
+  - id: SAST003
+    name: "Hardcoded Password / Secret"
+    description: "A sensitive value like a password, token, or secret key is hardcoded in the source file. This is a major security risk. Store secrets in environment variables or a secure vault."
+    pattern: '(?i)(password|passwd|pwd|secret|token)\s*=\s*["''].+?["'']'
+    severity: "Critical"
+    language: "any"
+    cwe: "CWE-798"
+
+  - id: SAST004
+    name: "Use of Weak Hashing Algorithm (MD5)"
+    description: "MD5 is a cryptographically broken hashing algorithm and should not be used for security purposes like password hashing. Use strong, salted hashing algorithms like Argon2 or bcrypt."
+    pattern: 'hashed\.md5\('
+    severity: "High"
+    language: "python"
+    cwe: "CWE-327"
+
+  - id: SAST005
+    name: "Potential Command Injection"
+    description: "Use of os.system() with user-controllable data can allow an attacker to execute arbitrary system commands. Use the 'subprocess' module with shell=False instead."
+    pattern: 'os\.system\('
+    severity: "Critical"
+    language: "python"
+    cwe: "CWE-78"

@@ -27,11 +27,20 @@
   - Events: `snapshot`, `log`, `status`, `heartbeat`, `done`
   - Replays historical logs then live-tails new content
   - Structured log format: `[ISO_TIMESTAMP] LEVEL: message`
+- **ZAP Docker Configuration:**
+  - Docker Compose configured with ZAP service on port 8081 (external) / 8080 (internal)
+  - MySQL port changed to 3307 to avoid conflict with local installations
+  - Backend `.env` configured with `ZAP_HOST=http://zap:8080`
+  - ZAP setup documentation created at `docs/ZAP_SETUP.md`
 
 ## Immediate Next Actions (to be done next)
 
+- Restart Docker Desktop if hanging, then verify ZAP health check:
+  - From host: `curl http://localhost:8081/JSON/core/view/version/`
+  - From backend container: `docker exec sentinel_backend curl -s http://zap:8080/JSON/core/view/version/`
+- Run full stack: `docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.local.yml up -d`
 - Run `composer install` in backend container
-- Run `php artisan key:generate && php artisan migrate --seed`
+- Run `php artisan migrate --seed` (APP_KEY already generated)
 - Scaffold React + Vite + Tailwind in `apps/frontend`
 - Build Dashboard + module cards + simple config forms
 - Wire Apply button to POST `/api/projects/{id}/runs`

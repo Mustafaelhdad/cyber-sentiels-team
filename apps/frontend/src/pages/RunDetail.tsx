@@ -54,6 +54,46 @@ const TOOL_ICONS: Record<string, string> = {
   n8n: "⚡",
 };
 
+// Web Security fixed tool categories
+type WebSecurityCategory = "waf" | "dast" | "sast" | "rasp";
+
+const WEB_SECURITY_CATEGORIES: {
+  id: WebSecurityCategory;
+  label: string;
+  icon: string;
+  tools: string[]; // tool keys that map to this category
+  description: string;
+}[] = [
+  {
+    id: "waf",
+    label: "WAF",
+    icon: "🛡️",
+    tools: ["modsecurity"],
+    description: "Web Application Firewall",
+  },
+  {
+    id: "dast",
+    label: "DAST",
+    icon: "🔍",
+    tools: ["zap"],
+    description: "Dynamic Application Security Testing",
+  },
+  {
+    id: "sast",
+    label: "SAST",
+    icon: "📊",
+    tools: ["sonarqube"],
+    description: "Static Application Security Testing",
+  },
+  {
+    id: "rasp",
+    label: "RASP",
+    icon: "⚡",
+    tools: ["rasp"],
+    description: "Runtime Application Self-Protection",
+  },
+];
+
 type ViewerTab = "status" | "report" | "logs";
 
 function formatDuration(
@@ -807,8 +847,9 @@ export default function RunDetail() {
   const navigate = useNavigate();
   const { setCurrentProject } = useCurrentProject();
 
-  // State for selected tool tab and viewer tab
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  // State for selected category tab (for web_security) and viewer tab
+  const [selectedCategory, setSelectedCategory] =
+    useState<WebSecurityCategory>("waf");
   const [viewerTab, setViewerTab] = useState<ViewerTab>("status");
 
   // Use shared hooks
@@ -838,12 +879,42 @@ export default function RunDetail() {
   // Use tasks from dedicated query, fallback to run's tasks
   const tasks = tasksData?.tasks ?? run?.tasks ?? [];
 
-  // Auto-select first task when tasks load
-  useEffect(() => {
-    if (tasks.length > 0 && selectedTaskId === null) {
-      setSelectedTaskId(tasks[0].id);
+  // For web_security runs, map tasks to categories
+  const isWebSecurity = run?.module === "web_security";
+
+  // Build a map of category -> task for web_security runs
+  const categoryTaskMap = useMemo(() => {
+    const map: Record<WebSecurityCategory, RunTask | null> = {
+      waf: null,
+      dast: null,
+      sast: null,
+      rasp: null,
+    };
+    if (!isWebSecurity) return map;
+    for (const task of tasks) {
+      for (const cat of WEB_SECURITY_CATEGORIES) {
+        if (cat.tools.includes(task.tool)) {
+          map[cat.id] = task;
+          break;
+        }
+      }
     }
-  }, [tasks, selectedTaskId]);
+    return map;
+  }, [tasks, isWebSecurity]);
+
+  // Auto-select first available category when tasks load (for web_security)
+  useEffect(() => {
+    if (!isWebSecurity || tasks.length === 0) return;
+    // Find first category that has a task
+    for (const cat of WEB_SECURITY_CATEGORIES) {
+      if (categoryTaskMap[cat.id]) {
+        setSelectedCategory(cat.id);
+        return;
+      }
+    }
+    // Default to first category even if no tasks
+    setSelectedCategory("waf");
+  }, [tasks, isWebSecurity, categoryTaskMap]);
 
   // Cancel mutation using shared hook
   const cancelMutation = useCancelRun(projectId!, runId!);
@@ -854,11 +925,14 @@ export default function RunDetail() {
     }
   };
 
-  // Get selected task from tasks data
+  // Get selected task from category (for web_security) or first task
   const selectedTask = useMemo(() => {
-    if (selectedTaskId === null) return null;
-    return tasks.find((t) => t.id === selectedTaskId) || null;
-  }, [tasks, selectedTaskId]);
+    if (isWebSecurity) {
+      return categoryTaskMap[selectedCategory] || null;
+    }
+    // Non-web_security: use first task
+    return tasks.length > 0 ? tasks[0] : null;
+  }, [isWebSecurity, categoryTaskMap, selectedCategory, tasks]);
 
   // Check if task/run is active (for live polling)
   const isTaskActive = useMemo(() => {
@@ -1115,39 +1189,79 @@ export default function RunDetail() {
       </div>
 
       {/* Tool Tabs + Viewer Panel */}
-      {tasks.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <p className="mt-4 text-gray-500 dark:text-gray-400">
-            No tasks for this run yet.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Tool Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Fixed Category Tabs for Web Security */}
+        {isWebSecurity ? (
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="flex overflow-x-auto">
+              {WEB_SECURITY_CATEGORIES.map((cat) => {
+                const task = categoryTaskMap[cat.id];
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setViewerTab("status");
+                    }}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      isSelected
+                        ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
+                        : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                    {task ? (
+                      <>
+                        <StatusIcon status={task.status} />
+                        {task.status === "running" && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {task.progress}%
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        —
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="p-8 text-center">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <p className="mt-4 text-gray-500 dark:text-gray-400">
+              No tasks for this run yet.
+            </p>
+          </div>
+        ) : (
+          /* Dynamic Tool Tabs for non-web_security runs */
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex overflow-x-auto">
               {tasks.map((task) => (
                 <button
                   key={task.id}
                   onClick={() => {
-                    setSelectedTaskId(task.id);
                     setViewerTab("status");
                   }}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    selectedTaskId === task.id
+                    selectedTask?.id === task.id
                       ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
                       : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
@@ -1164,119 +1278,150 @@ export default function RunDetail() {
               ))}
             </div>
           </div>
+        )}
 
-          {/* Viewer Tabs */}
-          {selectedTask && (
-            <>
-              <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <button
-                  onClick={() => setViewerTab("status")}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    viewerTab === "status"
-                      ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-gray-800"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    Status
-                  </span>
-                </button>
-                <button
-                  onClick={() => setViewerTab("report")}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    viewerTab === "report"
-                      ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-gray-800"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    Report
-                    {selectedTask.has_report && (
-                      <span className="ml-1 h-2 w-2 rounded-full bg-green-500" />
-                    )}
-                  </span>
-                </button>
-                <button
-                  onClick={() => setViewerTab("logs")}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    viewerTab === "logs"
-                      ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-gray-800"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    Logs
-                    {selectedTask.logs_path && (
-                      <span className="ml-1 h-2 w-2 rounded-full bg-green-500" />
-                    )}
-                  </span>
-                </button>
-              </div>
+        {/* Viewer Tabs & Content */}
+        {selectedTask ? (
+          <>
+            <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <button
+                onClick={() => setViewerTab("status")}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  viewerTab === "status"
+                    ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-gray-800"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  Status
+                </span>
+              </button>
+              <button
+                onClick={() => setViewerTab("report")}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  viewerTab === "report"
+                    ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-gray-800"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Report
+                  {selectedTask.has_report && (
+                    <span className="ml-1 h-2 w-2 rounded-full bg-green-500" />
+                  )}
+                </span>
+              </button>
+              <button
+                onClick={() => setViewerTab("logs")}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  viewerTab === "logs"
+                    ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-white dark:bg-gray-800"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Logs
+                  {selectedTask.logs_path && (
+                    <span className="ml-1 h-2 w-2 rounded-full bg-green-500" />
+                  )}
+                </span>
+              </button>
+            </div>
 
-              {/* Viewer Content */}
-              <div className="bg-white dark:bg-gray-800">
-                {viewerTab === "status" && (
-                  <TaskStatusPanel task={selectedTask} />
-                )}
-                {viewerTab === "report" && (
-                  <ReportViewer
-                    projectId={projectId!}
-                    runId={runId!}
-                    task={selectedTask}
-                  />
-                )}
-                {viewerTab === "logs" && (
-                  <LogsViewer
-                    projectId={projectId!}
-                    runId={runId!}
-                    taskId={selectedTask.id}
-                    isActive={isTaskActive}
-                  />
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+            {/* Viewer Content */}
+            <div className="bg-white dark:bg-gray-800">
+              {viewerTab === "status" && (
+                <TaskStatusPanel task={selectedTask} />
+              )}
+              {viewerTab === "report" && (
+                <ReportViewer
+                  projectId={projectId!}
+                  runId={runId!}
+                  task={selectedTask}
+                />
+              )}
+              {viewerTab === "logs" && (
+                <LogsViewer
+                  projectId={projectId!}
+                  runId={runId!}
+                  taskId={selectedTask.id}
+                  isActive={isTaskActive}
+                />
+              )}
+            </div>
+          </>
+        ) : isWebSecurity ? (
+          /* Empty state for web_security category with no task */
+          <div className="p-8 text-center">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+              {
+                WEB_SECURITY_CATEGORIES.find((c) => c.id === selectedCategory)
+                  ?.label
+              }{" "}
+              Not Configured
+            </h3>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              {
+                WEB_SECURITY_CATEGORIES.find((c) => c.id === selectedCategory)
+                  ?.description
+              }{" "}
+              is not configured for this run.
+            </p>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

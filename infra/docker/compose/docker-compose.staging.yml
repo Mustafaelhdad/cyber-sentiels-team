@@ -1,8 +1,6 @@
 # STAGING ENVIRONMENT OVERRIDES
 # Usage: docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.staging.yml up -d
 
-version: "3.8"
-
 services:
   nginx:
     ports:
@@ -33,14 +31,14 @@ services:
     restart: unless-stopped
 
   mysql:
-    ports: []  # No external access in staging
+    ports: [] # No external access in staging
     restart: unless-stopped
 
   redis:
-    ports: []  # No external access in staging
+    ports: [] # No external access in staging
     restart: unless-stopped
 
   zap:
     profiles:
-      - tools  # Only start when needed
+      - tools # Only start when needed
 

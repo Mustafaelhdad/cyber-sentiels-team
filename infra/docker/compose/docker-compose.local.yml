@@ -1,8 +1,6 @@
 # LOCAL DEVELOPMENT OVERRIDES
 # Usage: docker-compose -f docker-compose.yml -f infra/docker/compose/docker-compose.local.yml up -d
 
-version: "3.8"
-
 services:
   backend:
     environment:
@@ -31,9 +29,8 @@ services:
 
   mysql:
     ports:
-      - "3306:3306"
+      - "3307:3306" # Use 3307 externally to avoid conflict with local MySQL
 
   redis:
     ports:
       - "6379:6379"
-
