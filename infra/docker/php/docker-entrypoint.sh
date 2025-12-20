@@ -33,12 +33,6 @@ fi
 if [ "$1" = "php-fpm" ]; then
     echo "[Entrypoint] Running Laravel setup..."
     
-    # Install composer dependencies if vendor folder is missing
-    if [ ! -d "vendor" ]; then
-        echo "[Entrypoint] Installing composer dependencies..."
-        gosu www-data composer install --no-dev --optimize-autoloader --no-interaction
-    fi
-    
     # Wait for MySQL to be ready
     echo "[Entrypoint] Waiting for MySQL..."
     MAX_TRIES=30

@@ -34,13 +34,17 @@ WORKDIR /var/www/backend
 # Copy existing application
 COPY ./apps/backend /var/www/backend
 
+# Install composer dependencies during build (production, no dev deps)
+# This ensures all containers have the vendor directory
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
 # Create shared directory for WAF map file (volume will be mounted here)
 # This ensures the directory exists and has correct permissions
 RUN mkdir -p /shared /var/log/waf \
     && chown -R www-data:www-data /shared /var/log/waf \
     && chmod 775 /shared /var/log/waf
 
-# Set permissions
+# Set permissions (including vendor directory)
 RUN chown -R www-data:www-data /var/www/backend
 
 # Copy entrypoint script and fix line endings (Windows CRLF to Unix LF)
