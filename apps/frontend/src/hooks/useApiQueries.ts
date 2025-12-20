@@ -402,7 +402,8 @@ export function useWafProxies(projectId: string | number | undefined) {
     queryFn: () =>
       apiFetch<WafProxiesResponse>(`/projects/${projectId}/waf/proxies`),
     enabled: !!projectId,
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s for real-time counter updates
   });
 }
 

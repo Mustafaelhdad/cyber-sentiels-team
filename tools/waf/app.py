@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, current_app, Response
+from flask import Flask, request, jsonify, current_app, Response, g
 import re, html, json, hashlib, time, unicodedata, urllib.parse, os
 import requests as http_requests
 from collections import defaultdict
@@ -215,7 +215,18 @@ def _make_snippet_and_hash(payload_text: str) -> Tuple[str, str]:
     phash = hashlib.sha256(payload_text.encode("utf-8", errors="ignore")).hexdigest()
     return snippet, phash
 
-def log_match(ip: str, attack_type: str, pattern: str, method: str, path: str, ua: str, referer: str, payload_text: str) -> None:
+def log_match(
+    ip: str,
+    attack_type: str,
+    pattern: str,
+    method: str,
+    path: str,
+    ua: str,
+    referer: str,
+    payload_text: str,
+    blocked: bool = True,
+    status: int = 403,
+) -> None:
     snippet, phash = _make_snippet_and_hash(payload_text or "")
     rec = {
         "time": datetime.utcnow().isoformat() + "Z",
@@ -227,7 +238,9 @@ def log_match(ip: str, attack_type: str, pattern: str, method: str, path: str, u
         "ua": ua,
         "referer": referer or "",
         "snippet": snippet,
-        "payload_hash": phash
+        "payload_hash": phash,
+        "blocked": blocked,
+        "status": status,
     }
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as f:
@@ -311,6 +324,9 @@ def waf_before():
     # build normalized combined payload
     combined_raw = make_combined_payload()
     combined_escaped = html.escape(combined_raw)
+    # stash for logging in after_request if allowed
+    g.waf_combined_raw = combined_raw
+    g.waf_blocked = False
 
     # quick skip for static/image
     if request.path.startswith("/static") or (content_type or "").lower().startswith("image/"):
@@ -344,8 +360,9 @@ def waf_before():
 
     if unique:
         for at, pat in unique:
-            log_match(ip, at, pat, method, path, ua, referer, combined_raw)
+            log_match(ip, at, pat, method, path, ua, referer, combined_raw, blocked=True, status=403)
         types = sorted(set([t for t, _ in unique]))
+        g.waf_blocked = True
         return jsonify({"error": f"Blocked suspicious input ({', '.join(types)})"}), 403
 
     return None
@@ -359,6 +376,17 @@ def set_security_headers(response):
     response.headers.setdefault("Referrer-Policy", "no-referrer")
     response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=()")
     response.headers.setdefault("X-XSS-Protection", "0")
+
+    # Log allowed WAF proxy traffic (blocked requests already logged in @before_request)
+    try:
+        if is_proxy_path() and not getattr(g, "waf_blocked", False):
+            ip = request.remote_addr or "unknown"
+            ua = request.headers.get("User-Agent", "")
+            referer = request.headers.get("Referer", "")
+            combined_raw = getattr(g, "waf_combined_raw", "")
+            log_match(ip, "Allowed", "", request.method, request.path, ua, referer, combined_raw, blocked=False, status=response.status_code)
+    except Exception:
+        pass
     return response
 
 @app.route("/", methods=["GET", "POST"])
@@ -394,7 +422,7 @@ def send_email():
     # CRLF in headers
     if re.search(r"[\r\n]", to) or re.search(r"[\r\n]", subject):
         combined = make_combined_payload()
-        log_match(request.remote_addr or "unknown", "Email Header Injection (CRLF)", "CRLF_in_field", request.method, request.path, request.headers.get("User-Agent",""), request.headers.get("Referer",""), combined)
+        log_match(request.remote_addr or "unknown", "Email Header Injection (CRLF)", "CRLF_in_field", request.method, request.path, request.headers.get("User-Agent",""), request.headers.get("Referer",""), combined, blocked=True, status=403)
         return jsonify({"error": "Blocked suspicious input (Email Header Injection)"}), 403
 
     #  email format
@@ -417,7 +445,7 @@ def send_email():
             seen.add((a, p)); uniq.append((a, p))
     if uniq:
         for a, p in uniq:
-            log_match(request.remote_addr or "unknown", a, p, request.method, request.path, request.headers.get("User-Agent",""), request.headers.get("Referer",""), combined)
+            log_match(request.remote_addr or "unknown", a, p, request.method, request.path, request.headers.get("User-Agent",""), request.headers.get("Referer",""), combined, blocked=True, status=403)
         return jsonify({"error": "Blocked suspicious input"}), 403
 
     return jsonify({"message": f"Email simulated to: {to}"}), 200
@@ -426,7 +454,7 @@ def send_email():
 @app.errorhandler(405)
 def handle_405(e):
     combined = make_combined_payload()
-    log_match(request.remote_addr or "unknown", "Method Not Allowed (405)", "generic", request.method, request.path, request.headers.get("User-Agent",""), request.headers.get("Referer",""), combined)
+    log_match(request.remote_addr or "unknown", "Method Not Allowed (405)", "generic", request.method, request.path, request.headers.get("User-Agent",""), request.headers.get("Referer",""), combined, blocked=True, status=405)
     return jsonify({"error": "Method Not Allowed"}), 405
 
 @app.route("/shutdown", methods=["POST"])

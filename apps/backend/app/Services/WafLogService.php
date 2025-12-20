@@ -151,6 +151,10 @@ class WafLogService
           $logs->push($parsed);
         }
       }
+
+      // Flask writes one log line per matched pattern, which inflates counts.
+      // Deduplicate to a single event per request (per IP/method/path/payload hash/second).
+      $logs = $this->dedupeLogs($logs);
     } catch (\Exception $e) {
       Log::error('Failed to parse Flask WAF log', [
         'error' => $e->getMessage(),
@@ -187,17 +191,19 @@ class WafLogService
     }
 
     $token = $this->extractTokenFromUri($data['path'] ?? '');
+    $blocked = (bool)($data['blocked'] ?? true);
+    $status = $data['status'] ?? ($blocked ? 403 : 200);
 
     return [
       'timestamp' => $data['time'] ?? now()->toIso8601String(),
       'ip' => $data['ip'] ?? 'unknown',
       'method' => $data['method'] ?? 'GET',
       'path' => $data['path'] ?? '/',
-      'status' => 403, // All entries in suspicious.log are blocked
+      'status' => $status,
       'size' => 0,
       'response_time' => 0,
       'token' => $token,
-      'blocked' => true,
+      'blocked' => $blocked,
       'attack_type' => $data['attack'] ?? null,
       'pattern' => $data['pattern'] ?? null,
       'snippet' => $data['snippet'] ?? null,
@@ -216,6 +222,50 @@ class WafLogService
       return $matches[1];
     }
     return null;
+  }
+
+  /**
+   * Deduplicate multiple log lines for the same request.
+   * Flask logs once per matched pattern; group by IP/method/path/payload_hash and second.
+   */
+  protected function dedupeLogs(Collection $logs): Collection
+  {
+    $seen = [];
+
+    foreach ($logs as $log) {
+      $bucketTs = substr($log['timestamp'] ?? '', 0, 19); // second precision
+      $payloadHash = $log['payload_hash'] ?? '';
+      $key = implode('|', [
+        $log['ip'] ?? 'unknown',
+        $log['method'] ?? 'GET',
+        $log['path'] ?? '/',
+        $payloadHash,
+        $bucketTs,
+      ]);
+
+      if (!isset($seen[$key])) {
+        // Track all attack types for visibility
+        $log['attack_types'] = $log['attack_type'] ? [$log['attack_type']] : [];
+        $seen[$key] = $log;
+        continue;
+      }
+
+      $existing = $seen[$key];
+      $types = $existing['attack_types'] ?? [];
+      if (!empty($log['attack_type'])) {
+        $types[] = $log['attack_type'];
+      }
+      $types = array_values(array_unique(array_filter($types)));
+
+      $existing['attack_types'] = $types;
+      $existing['attack_type'] = !empty($types)
+        ? implode(', ', $types)
+        : ($existing['attack_type'] ?? null);
+
+      $seen[$key] = $existing;
+    }
+
+    return collect(array_values($seen));
   }
 
   /**
