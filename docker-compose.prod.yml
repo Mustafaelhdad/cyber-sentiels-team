@@ -233,6 +233,31 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # ===================
+  # SAST Scanner
+  # ===================
+  sast:
+    build:
+      context: ./tools/dast_and_sast
+      dockerfile: Dockerfile
+    container_name: sentinel_sast
+    environment:
+      - SAST_RULES_FILE=/app/config/sast_rules.yaml
+      - SAST_OUTPUT_DIR=/app/output
+    volumes:
+      - sast_output:/app/output
+      - sast_scans:/app/scans
+      - reports_artifacts:/app/reports
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
 networks:
   sentinel_net:
     driver: bridge
@@ -255,4 +280,8 @@ volumes:
   certbot_certs:
     driver: local
   zap_data:
+    driver: local
+  sast_output:
+    driver: local
+  sast_scans:
     driver: local
