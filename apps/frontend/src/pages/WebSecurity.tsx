@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useCurrentProject } from "@/hooks/useCurrentProject";
 import {
   useCreateRun,
   useProjectRuns,
+  useProject,
   useWafProxies,
   useWafStats,
   useWafLogs,
+  useSastRuns,
+  useSastFindings,
+  useSastHealth,
 } from "@/hooks/useApiQueries";
 import {
   WafProxyCard,
@@ -14,6 +18,11 @@ import {
   WafLogsList,
   WafStatsCard,
 } from "@/components/waf";
+import {
+  SastScanForm,
+  SastFindingsTable,
+  SastRunsList,
+} from "@/components/sast";
 
 const STATUS_COLORS: Record<string, string> = {
   pending:
@@ -26,13 +35,27 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 type TargetType = "url" | "repo";
-type TabType = "dast" | "waf";
+type TabType = "dast" | "waf" | "sast";
 
 export default function WebSecurity() {
-  const { currentProject } = useCurrentProject();
+  const { currentProject, clearCurrentProject } = useCurrentProject();
   const [activeTab, setActiveTab] = useState<TabType>("waf");
   const [targetType, setTargetType] = useState<TargetType>("url");
   const [targetValue, setTargetValue] = useState("");
+  const [selectedSastRun, setSelectedSastRun] = useState<number | null>(null);
+
+  // Validate that the stored project actually exists on the server
+  const { data: projectData, isError: projectError } = useProject(
+    currentProject?.id
+  );
+
+  // Clear invalid project from storage if it doesn't exist on server
+  useEffect(() => {
+    if (projectError && currentProject) {
+      // Project doesn't exist or user doesn't have access - clear it
+      clearCurrentProject();
+    }
+  }, [projectError, currentProject, clearCurrentProject]);
 
   // Only enable hooks when project is selected
   const createRunMutation = useCreateRun(currentProject?.id ?? 0);
@@ -53,12 +76,25 @@ export default function WebSecurity() {
     50
   );
 
+  // SAST hooks
+  const { data: sastHealthData } = useSastHealth(currentProject?.id);
+  const { data: sastRunsData, isLoading: sastRunsLoading } = useSastRuns(
+    currentProject?.id
+  );
+  const { data: sastFindingsData, isLoading: sastFindingsLoading } =
+    useSastFindings(
+      currentProject?.id,
+      selectedSastRun ?? undefined,
+      !!selectedSastRun
+    );
+
   // Filter runs for web_security module only
   const recentRuns =
     runsData?.data?.filter((r) => r.module === "web_security").slice(0, 5) ??
     [];
 
   const proxies = proxiesData?.data ?? [];
+  const sastRuns = sastRunsData?.runs ?? [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +107,16 @@ export default function WebSecurity() {
     });
   };
 
-  // Show project selection prompt if no project selected
-  if (!currentProject) {
+  const handleSastScanStarted = (runId: number) => {
+    setSelectedSastRun(runId);
+  };
+
+  const handleViewFindings = (runId: number) => {
+    setSelectedSastRun(runId);
+  };
+
+  // Show project selection prompt if no project selected or project is invalid
+  if (!currentProject || projectError) {
     return (
       <div>
         <div className="mb-8">
@@ -100,10 +144,12 @@ export default function WebSecurity() {
             />
           </svg>
           <h3 className="mt-4 text-lg font-medium text-yellow-800 dark:text-yellow-200">
-            No Project Selected
+            {projectError ? "Project Not Found" : "No Project Selected"}
           </h3>
           <p className="mt-2 text-yellow-700 dark:text-yellow-300">
-            Please select a project before starting a security scan.
+            {projectError
+              ? "The selected project no longer exists or you don't have access to it."
+              : "Please select a project before starting a security scan."}
           </p>
           <Link
             to="/projects"
@@ -123,7 +169,8 @@ export default function WebSecurity() {
           Web Security
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Configure WAF protection and run DAST scans with OWASP ZAP.
+          Configure WAF protection, run DAST scans, and analyze source code with
+          SAST.
         </p>
         <p className="mt-1 text-sm text-indigo-600 dark:text-indigo-400">
           Project: {currentProject.name}
@@ -181,6 +228,37 @@ export default function WebSecurity() {
                 />
               </svg>
               DAST Scanner
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab("sast")}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === "sast"
+                ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                />
+              </svg>
+              SAST Scanner
+              {sastHealthData?.available === false && (
+                <span
+                  className="ml-1 h-2 w-2 rounded-full bg-red-500"
+                  title="Service unavailable"
+                />
+              )}
             </span>
           </button>
         </nav>
@@ -428,6 +506,76 @@ export default function WebSecurity() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* SAST Tab Content */}
+      {activeTab === "sast" && (
+        <div className="space-y-6">
+          {/* SAST Service Status */}
+          {sastHealthData?.available === false && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+              <div className="flex items-center">
+                <svg
+                  className="h-5 w-5 text-red-500 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span className="text-sm text-red-800 dark:text-red-200">
+                  SAST service is currently unavailable. Please ensure the
+                  container is running.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* SAST Scan Form */}
+          <SastScanForm
+            projectId={currentProject.id}
+            onScanStarted={handleSastScanStarted}
+          />
+
+          {/* SAST Findings (if a run is selected) */}
+          {selectedSastRun && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Scan Findings
+                </h2>
+                <button
+                  onClick={() => setSelectedSastRun(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+              <SastFindingsTable
+                findings={sastFindingsData?.findings ?? []}
+                isLoading={sastFindingsLoading}
+              />
+            </div>
+          )}
+
+          {/* SAST Runs History */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Recent SAST Scans
+            </h2>
+            <SastRunsList
+              runs={sastRuns}
+              projectId={currentProject.id}
+              isLoading={sastRunsLoading}
+              onViewFindings={handleViewFindings}
+            />
           </div>
         </div>
       )}

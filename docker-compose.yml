@@ -24,7 +24,13 @@ services:
     networks:
       - sentinel_net
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -84,6 +90,7 @@ services:
       - WAF_MAP_FILE_PATH=/shared/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - ZAP_API_URL=http://zap:8080
+      - SAST_API_URL=http://sast:8080
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
@@ -124,6 +131,7 @@ services:
       - WAF_MAP_FILE_PATH=/shared/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - ZAP_API_URL=http://zap:8080
+      - SAST_API_URL=http://sast:8080
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
@@ -208,6 +216,33 @@ services:
     restart: unless-stopped
 
   # ===================
+  # SAST Scanner
+  # ===================
+  sast:
+    build:
+      context: ./tools/dast_and_sast
+      dockerfile: Dockerfile
+    container_name: sentinel_sast
+    environment:
+      - SAST_RULES_FILE=/app/config/sast_rules.yaml
+      - SAST_OUTPUT_DIR=/app/output
+      - SAST_SCANS_DIR=/app/scans
+      - MAX_UPLOAD_SIZE=${SAST_MAX_UPLOAD_SIZE:-104857600}
+    volumes:
+      - sast_output:/app/output
+      - sast_scans:/app/scans
+      - reports_artifacts:/app/reports:rw
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===================
   # OWASP ZAP (DAST Tool)
   # ===================
   zap:
@@ -219,7 +254,8 @@ services:
     networks:
       - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/JSON/core/view/version/"]
+      test:
+        ["CMD", "curl", "-f", "http://localhost:8080/JSON/core/view/version/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -248,4 +284,8 @@ volumes:
   certbot_certs:
     driver: local
   zap_data:
+    driver: local
+  sast_output:
+    driver: local
+  sast_scans:
     driver: local

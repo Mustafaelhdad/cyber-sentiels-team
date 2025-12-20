@@ -51,6 +51,7 @@ class RunTask extends Model
    * Tool types.
    */
   public const TOOL_ZAP = 'zap';
+  public const TOOL_SAST = 'sast';
   public const TOOL_MODSECURITY = 'modsecurity';
   public const TOOL_SONARQUBE = 'sonarqube';
   public const TOOL_WAZUH = 'wazuh';

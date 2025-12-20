@@ -8,8 +8,10 @@ import {
   useRun,
   useRunTasks,
   useCancelRun,
+  useSastFindings,
   type RunTask,
 } from "@/hooks/useApiQueries";
+import { SastFindingsTable } from "@/components/sast/SastFindingsTable";
 
 interface LogsResponse {
   logs: string;
@@ -37,6 +39,7 @@ const MODULE_LABELS: Record<string, string> = {
 
 const TOOL_LABELS: Record<string, string> = {
   zap: "OWASP ZAP",
+  sast: "SAST Scanner",
   modsecurity: "ModSecurity",
   sonarqube: "SonarQube",
   wazuh: "Wazuh",
@@ -46,6 +49,7 @@ const TOOL_LABELS: Record<string, string> = {
 
 const TOOL_ICONS: Record<string, string> = {
   zap: "🔍",
+  sast: "📝",
   modsecurity: "🛡️",
   sonarqube: "📊",
   wazuh: "👁️",
@@ -80,8 +84,8 @@ const WEB_SECURITY_CATEGORIES: {
   {
     id: "sast",
     label: "SAST",
-    icon: "📊",
-    tools: ["sonarqube"],
+    icon: "📝",
+    tools: ["sast", "sonarqube"],
     description: "Static Application Security Testing",
   },
   {
@@ -399,8 +403,171 @@ function LogsViewer({
   );
 }
 
-// Report Viewer Component
-function ReportViewer({
+// SAST Report Viewer Component - shows findings table
+function SastReportViewer({
+  projectId,
+  runId,
+  task,
+}: {
+  projectId: string;
+  runId: string;
+  task: RunTask;
+}) {
+  // Fetch SAST findings using the dedicated endpoint
+  const {
+    data: findingsData,
+    isLoading,
+    isError,
+    error,
+  } = useSastFindings(projectId, runId, task.status === "completed");
+
+  const handleDownloadReport = async () => {
+    const meta = (task.meta_json ?? {}) as { output_format?: string };
+    const prefersHtml = meta.output_format === "html";
+    const htmlEndpoint = `/projects/${projectId}/sast/runs/${runId}/download-html`;
+    const jsonEndpoint = `/projects/${projectId}/sast/runs/${runId}/download`;
+
+    let blob: Blob | null = null;
+    let ext: "html" | "json" | "pdf" = "json";
+    let downloadUrl = "";
+    try {
+      // Try HTML first if requested, otherwise go straight to JSON
+      if (prefersHtml) {
+        try {
+          blob = await apiFetchBlob(htmlEndpoint);
+        } catch {
+          // fallback to JSON
+          blob = await apiFetchBlob(jsonEndpoint);
+        }
+      } else {
+        blob = await apiFetchBlob(jsonEndpoint);
+      }
+
+      const contentType = blob.type || "";
+      ext = contentType.includes("html")
+        ? "html"
+        : contentType.includes("pdf")
+        ? "pdf"
+        : prefersHtml
+        ? "html"
+        : "json";
+
+      downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `sast-report-${runId}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      alert("Report not available for download.");
+    } finally {
+      if (downloadUrl) {
+        window.URL.revokeObjectURL(downloadUrl);
+      }
+    }
+  };
+
+  if (task.status !== "completed") {
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <div className="text-center">
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            Scan in progress...
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            Findings will be available after the scan completes.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-solid border-indigo-600 border-r-transparent" />
+        <span className="ml-2 text-gray-600 dark:text-gray-400">
+          Loading findings...
+        </span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <div className="text-center">
+          <p className="text-red-500 dark:text-red-400">
+            {(error as Error)?.message || "Failed to load findings"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const findings = findingsData?.findings ?? [];
+  const scanInfo = findingsData?.scan_info;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Report Header */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            SAST Findings
+          </span>
+          {scanInfo && (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {scanInfo.total_findings} total findings
+            </span>
+          )}
+        </div>
+        <button
+          onClick={handleDownloadReport}
+          className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+          title="Download report"
+        >
+          <svg
+            className="h-4 w-4 mr-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+          Download
+        </button>
+      </div>
+
+      {/* Findings Table */}
+      <div className="flex-1 overflow-auto p-4">
+        <SastFindingsTable findings={findings} />
+      </div>
+    </div>
+  );
+}
+
+// Generic Report Viewer Component
+function GenericReportViewer({
   projectId,
   runId,
   task,
@@ -698,6 +865,27 @@ function ReportViewer({
         )}
       </div>
     </div>
+  );
+}
+
+// Report Viewer Component - routes to appropriate viewer based on tool type
+function ReportViewer({
+  projectId,
+  runId,
+  task,
+}: {
+  projectId: string;
+  runId: string;
+  task: RunTask;
+}) {
+  // Use SAST-specific viewer for SAST tasks
+  if (task.tool === "sast") {
+    return <SastReportViewer projectId={projectId} runId={runId} task={task} />;
+  }
+
+  // Use generic viewer for other tools
+  return (
+    <GenericReportViewer projectId={projectId} runId={runId} task={task} />
   );
 }
 

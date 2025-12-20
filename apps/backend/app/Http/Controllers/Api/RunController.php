@@ -53,6 +53,12 @@ class RunController extends Controller
   {
     $this->authorize('view', $project);
 
+    // Poll external services for status updates if run is still active
+    if (!$run->isComplete()) {
+      $this->runService->pollExternalTaskStatus($run);
+      $run->refresh();
+    }
+
     return response()->json([
       'run' => new RunResource($run->load('tasks')),
     ]);
@@ -79,6 +85,12 @@ class RunController extends Controller
   public function tasks(Project $project, Run $run): JsonResponse
   {
     $this->authorize('view', $project);
+
+    // Poll external services for status updates if run is still active
+    if (!$run->isComplete()) {
+      $this->runService->pollExternalTaskStatus($run);
+      $run->refresh();
+    }
 
     return response()->json([
       'tasks' => RunTaskResource::collection($run->tasks),

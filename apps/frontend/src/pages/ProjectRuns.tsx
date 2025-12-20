@@ -93,21 +93,38 @@ export default function ProjectRuns() {
     }
   };
 
-  const handleDownloadReport = async (runId: number) => {
+  const handleDownloadReport = async (runId: number, tool?: string) => {
     try {
       const apiBase = import.meta.env.VITE_API_URL || "/api";
-      const url = `${apiBase}/projects/${projectId}/runs/${runId}/report`;
-      const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Report not available");
-      const blob = await res.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `run-${runId}-report.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
+      const token = localStorage.getItem("auth_token");
+
+      // Build headers with auth token
+      const headers: HeadersInit = {
+        Accept: "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // If we have a specific tool, use the run report endpoint with tool param
+      // Otherwise, navigate to run detail to view reports
+      if (tool) {
+        const url = `${apiBase}/projects/${projectId}/runs/${runId}/report?tool=${tool}`;
+        const res = await fetch(url, { credentials: "include", headers });
+        if (!res.ok) throw new Error("Report not available");
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `run-${runId}-${tool}-report.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+      } else {
+        // Navigate to run detail page to view all task reports
+        navigate(`/projects/${projectId}/runs/${runId}`);
+      }
     } catch {
       alert("Report not available for this run.");
     }
@@ -376,7 +393,9 @@ export default function ProjectRuns() {
 
                           {/* Download Report */}
                           <button
-                            onClick={() => handleDownloadReport(run.id)}
+                            onClick={() =>
+                              handleDownloadReport(run.id, run.tasks?.[0]?.tool)
+                            }
                             disabled={!hasReport}
                             className={`${
                               hasReport
@@ -384,9 +403,7 @@ export default function ProjectRuns() {
                                 : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                             }`}
                             title={
-                              hasReport
-                                ? "Download report"
-                                : "No report available"
+                              hasReport ? "View report" : "No report available"
                             }
                           >
                             <svg

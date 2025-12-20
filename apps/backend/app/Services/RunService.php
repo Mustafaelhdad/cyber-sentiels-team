@@ -10,6 +10,30 @@ use Illuminate\Database\Eloquent\Collection;
 
 class RunService
 {
+  protected ?SastService $sastService = null;
+  protected ?ArtifactStorageService $artifactStorage = null;
+
+  /**
+   * Get SastService instance (lazy loaded).
+   */
+  protected function getSastService(): SastService
+  {
+    if ($this->sastService === null) {
+      $this->sastService = app(SastService::class);
+    }
+    return $this->sastService;
+  }
+
+  /**
+   * Get ArtifactStorageService instance (lazy loaded).
+   */
+  protected function getArtifactStorage(): ArtifactStorageService
+  {
+    if ($this->artifactStorage === null) {
+      $this->artifactStorage = app(ArtifactStorageService::class);
+    }
+    return $this->artifactStorage;
+  }
   /**
    * Get all runs for a project.
    */
@@ -116,6 +140,98 @@ class RunService
       } else {
         $run->markAsCompleted();
       }
+    }
+  }
+
+  /**
+   * Poll external services for task status updates.
+   * This is called when fetching run details to ensure status is up-to-date.
+   */
+  public function pollExternalTaskStatus(Run $run): void
+  {
+    $tasks = $run->tasks()->whereIn('status', [
+      RunTask::STATUS_PENDING,
+      RunTask::STATUS_RUNNING,
+    ])->get();
+
+    foreach ($tasks as $task) {
+      $this->pollTaskStatus($task, $run);
+    }
+  }
+
+  /**
+   * Poll status for a specific task based on its tool type.
+   */
+  protected function pollTaskStatus(RunTask $task, Run $run): void
+  {
+    switch ($task->tool) {
+      case RunTask::TOOL_SAST:
+        $this->pollSastTaskStatus($task, $run);
+        break;
+        // Add other tool polling here as needed
+        // case RunTask::TOOL_ZAP:
+        //   $this->pollZapTaskStatus($task, $run);
+        //   break;
+    }
+  }
+
+  /**
+   * Poll SAST service for task status updates.
+   */
+  protected function pollSastTaskStatus(RunTask $task, Run $run): void
+  {
+    $sastScanId = $task->meta_json['sast_scan_id'] ?? null;
+
+    if (!$sastScanId) {
+      return;
+    }
+
+    $sastService = $this->getSastService();
+    $scanStatus = $sastService->getScanStatus($sastScanId);
+
+    if (!$scanStatus) {
+      return;
+    }
+
+    $newTaskStatus = $sastService->mapStatusToTaskStatus($scanStatus['status']);
+
+    // Update task if status changed
+    if ($newTaskStatus !== $task->status) {
+      if ($newTaskStatus === RunTask::STATUS_COMPLETED) {
+        // Download and store the report
+        $reportPath = $sastService->downloadAndStoreReport($task, $sastScanId);
+
+        // Also fetch and store findings
+        $findings = $sastService->getScanFindings($sastScanId);
+        if ($findings) {
+          $sastService->storeFindings($task, $findings);
+        }
+
+        $sastService->log($task, 'INFO', 'SAST scan completed successfully');
+        $task->markAsCompleted($reportPath);
+
+        // Check if all tasks are done
+        $this->updateRunStatus($run);
+      } elseif ($newTaskStatus === RunTask::STATUS_FAILED) {
+        $error = $scanStatus['error'] ?? 'Unknown error';
+        $sastService->log($task, 'ERROR', "SAST scan failed: {$error}");
+        $task->markAsFailed($error);
+
+        // Check if all tasks are done
+        $this->updateRunStatus($run);
+      } else {
+        $task->update(['status' => $newTaskStatus]);
+      }
+    }
+
+    // Update progress/findings info in metadata
+    if (isset($scanStatus['total_findings'])) {
+      $task->update([
+        'meta_json' => array_merge($task->meta_json ?? [], [
+          'total_findings' => $scanStatus['total_findings'],
+          'severity_counts' => $scanStatus['severity_counts'] ?? [],
+        ]),
+      ]);
     }
   }
 }

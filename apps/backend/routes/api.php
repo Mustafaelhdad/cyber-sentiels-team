@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
 use App\Http\Controllers\Api\RunStreamController;
+use App\Http\Controllers\Api\SastController;
 use App\Http\Controllers\Api\WafProxyController;
 use App\Http\Controllers\Api\WafLogController;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +86,19 @@ Route::middleware('auth:sanctum')->group(function () {
       Route::get('/stats', [WafProxyController::class, 'stats']);
       Route::get('/logs', [WafLogController::class, 'index']);
       Route::get('/logs/summary', [WafLogController::class, 'summary']);
+    });
+
+    // SAST routes
+    Route::prefix('sast')->group(function () {
+      Route::get('/health', [SastController::class, 'health']);
+      Route::get('/rules', [SastController::class, 'rules']);
+      Route::get('/runs', [SastController::class, 'listRuns']);
+      Route::post('/runs', [SastController::class, 'startScan']);
+      Route::get('/runs/{run}', [SastController::class, 'getRunStatus']);
+      Route::get('/runs/{run}/findings', [SastController::class, 'getFindings']);
+      Route::get('/runs/{run}/download', [SastController::class, 'downloadReport']);
+      Route::get('/runs/{run}/download-html', [SastController::class, 'downloadHtmlReport']);
+      Route::get('/runs/{run}/download-pdf', [SastController::class, 'downloadPdfReport']);
     });
   });
 });

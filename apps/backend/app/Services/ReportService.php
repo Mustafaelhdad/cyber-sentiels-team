@@ -30,7 +30,7 @@ class ReportService
         'tool' => $task->tool,
         'status' => $task->status,
         'progress' => $task->progress,
-        'has_report' => !empty($task->report_path),
+        'has_report' => $task->hasReport(),
       ])->toArray(),
       'findings_count' => $this->countFindings($run),
     ];

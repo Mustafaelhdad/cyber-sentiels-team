@@ -1,45 +1,490 @@
-
-# This file defines a set of rules for the Static Application Security Testing (SAST) engine.
-# Each rule identifies a potential security vulnerability pattern in the source code.
-
+# SAST Rules Configuration
+# =========================
+# This file defines security vulnerability patterns for the Static Application Security Testing engine.
+# Each rule identifies a potential vulnerability pattern in the source code.
+#
+# Rule Structure:
+#   - id: Unique identifier (e.g., SAST001)
+#   - name: Human-readable vulnerability name
+#   - description: Detailed explanation of the vulnerability and remediation
+#   - pattern: Regex pattern to match vulnerable code
+#   - severity: Critical, High, Medium, Low, Info
+#   - language: php, python, javascript, typescript, or "any" for all languages
+#   - cwe: Common Weakness Enumeration ID
 
 rules:
+  # ===========================================
+  # SQL INJECTION VULNERABILITIES
+  # ===========================================
+  
   - id: SAST001
-    name: "Potential SQL Injection (PHP Generic)"
-    description: "Detects direct usage of user-controlled superglobals like $_GET or $_POST in database queries, which is a primary vector for SQL Injection. Always use parameterized queries."
-    pattern: 'mysql_query\s*\(.*\$_(GET|POST|REQUEST)\[.*?\].*\)'
-    severity: "High"
+    name: "SQL Injection (PHP mysql_query)"
+    description: "Direct usage of user-controlled superglobals ($_GET, $_POST, $_REQUEST) in mysql_query() is vulnerable to SQL Injection. Use PDO with prepared statements instead."
+    pattern: 'mysql_query\s*\([^)]*\$_(GET|POST|REQUEST|COOKIE)\['
+    severity: "Critical"
     language: "php"
     cwe: "CWE-89"
 
   - id: SAST002
-    name: "Potential SQL Injection (Python F-String)"
-    description: "Using f-strings or string formatting to build SQL queries is highly dangerous and can lead to SQL Injection. Use parameterized queries provided by your database library instead."
-    pattern: '\.execute\s*\(\s*f["''](.*\{.*\}.*)["'']\s*\)'
+    name: "SQL Injection (Python F-String)"
+    description: "Using f-strings or string formatting to build SQL queries can lead to SQL Injection. Use parameterized queries with placeholders instead."
+    pattern: '\.execute\s*\(\s*f["\u0027].*\{.*\}.*["\u0027]'
     severity: "High"
     language: "python"
     cwe: "CWE-89"
 
   - id: SAST003
-    name: "Hardcoded Password / Secret"
-    description: "A sensitive value like a password, token, or secret key is hardcoded in the source file. This is a major security risk. Store secrets in environment variables or a secure vault."
-    pattern: '(?i)(password|passwd|pwd|secret|token)\s*=\s*["''].+?["'']'
+    name: "SQL Injection (PHP String Concatenation)"
+    description: "Concatenating user input directly into SQL queries allows SQL Injection attacks. Use prepared statements with bound parameters."
+    pattern: '(mysqli_query|mysql_query|pg_query)\s*\([^)]*\.\s*\$_(GET|POST|REQUEST|COOKIE)\['
+    severity: "Critical"
+    language: "php"
+    cwe: "CWE-89"
+
+  - id: SAST004
+    name: "SQL Injection (PHP PDO without Prepare)"
+    description: "Using PDO query() with concatenated user input is vulnerable. Use prepare() with execute() and bound parameters instead."
+    pattern: '\$\w+->query\s*\([^)]*\.\s*\$_(GET|POST|REQUEST)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-89"
+
+  - id: SAST005
+    name: "SQL Injection (JavaScript/Node.js)"
+    description: "Building SQL queries with string concatenation or template literals using user input allows SQL Injection. Use parameterized queries."
+    pattern: '(query|execute)\s*\(\s*[`"\u0027].*\$\{.*\}.*[`"\u0027]'
+    severity: "High"
+    language: "javascript"
+    cwe: "CWE-89"
+
+  - id: SAST006
+    name: "SQL Injection (TypeScript)"
+    description: "Building SQL queries with template literals containing user input is vulnerable to SQL Injection. Use parameterized queries."
+    pattern: '(query|execute)\s*\(\s*`[^`]*\$\{[^}]+\}[^`]*`'
+    severity: "High"
+    language: "typescript"
+    cwe: "CWE-89"
+
+  - id: SAST007
+    name: "SQL Injection (Python format string)"
+    description: "Using .format() or % formatting for SQL queries is dangerous. Use parameterized queries."
+    pattern: '\.execute\s*\([^)]*\.format\s*\('
+    severity: "High"
+    language: "python"
+    cwe: "CWE-89"
+
+  # ===========================================
+  # CROSS-SITE SCRIPTING (XSS) VULNERABILITIES
+  # ===========================================
+  
+  - id: SAST010
+    name: "XSS (PHP Echo User Input)"
+    description: "Directly echoing user input ($_GET, $_POST) without sanitization allows XSS attacks. Use htmlspecialchars() or htmlentities() to encode output."
+    pattern: 'echo\s+[^;]*\$_(GET|POST|REQUEST|COOKIE)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-79"
+
+  - id: SAST011
+    name: "XSS (PHP Print User Input)"
+    description: "Directly printing user input without encoding enables XSS. Apply htmlspecialchars() before output."
+    pattern: 'print\s+[^;]*\$_(GET|POST|REQUEST)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-79"
+
+  - id: SAST012
+    name: "XSS (JavaScript innerHTML)"
+    description: "Using innerHTML with untrusted data can lead to XSS. Use textContent or sanitize input with DOMPurify."
+    pattern: '\.innerHTML\s*=\s*[^;]*(?!DOMPurify)'
+    severity: "Medium"
+    language: "javascript"
+    cwe: "CWE-79"
+
+  - id: SAST013
+    name: "XSS (JavaScript document.write)"
+    description: "document.write() with dynamic content can introduce XSS vulnerabilities. Avoid document.write() entirely in modern code."
+    pattern: 'document\.write\s*\('
+    severity: "High"
+    language: "javascript"
+    cwe: "CWE-79"
+
+  - id: SAST014
+    name: "XSS (React dangerouslySetInnerHTML)"
+    description: "Using dangerouslySetInnerHTML bypasses React's XSS protection. Sanitize content with DOMPurify before use."
+    pattern: 'dangerouslySetInnerHTML'
+    severity: "Medium"
+    language: "javascript"
+    cwe: "CWE-79"
+
+  - id: SAST015
+    name: "XSS (TypeScript innerHTML)"
+    description: "Assigning to innerHTML with dynamic data is vulnerable to XSS. Use textContent or a sanitization library."
+    pattern: '\.innerHTML\s*='
+    severity: "Medium"
+    language: "typescript"
+    cwe: "CWE-79"
+
+  - id: SAST016
+    name: "XSS (PHP Short Tag Echo)"
+    description: "Using <?= with user input directly outputs unsanitized data. Wrap with htmlspecialchars()."
+    pattern: '<\?=\s*\$_(GET|POST|REQUEST|COOKIE)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-79"
+
+  # ===========================================
+  # HARDCODED SECRETS & CREDENTIALS
+  # ===========================================
+  
+  - id: SAST020
+    name: "Hardcoded Password"
+    description: "Passwords should never be hardcoded in source files. Use environment variables or a secrets manager."
+    pattern: '(?i)(password|passwd|pwd)\s*=\s*["\u0027][^"\u0027]{3,}["\u0027]'
     severity: "Critical"
     language: "any"
     cwe: "CWE-798"
 
-  - id: SAST004
-    name: "Use of Weak Hashing Algorithm (MD5)"
-    description: "MD5 is a cryptographically broken hashing algorithm and should not be used for security purposes like password hashing. Use strong, salted hashing algorithms like Argon2 or bcrypt."
-    pattern: 'hashed\.md5\('
+  - id: SAST021
+    name: "Hardcoded API Key"
+    description: "API keys should not be committed to source code. Store them in environment variables or a vault."
+    pattern: '(?i)(api[_-]?key|apikey)\s*[:=]\s*["\u0027][A-Za-z0-9_\-]{16,}["\u0027]'
+    severity: "Critical"
+    language: "any"
+    cwe: "CWE-798"
+
+  - id: SAST022
+    name: "Hardcoded Secret/Token"
+    description: "Secrets and tokens must be stored securely, not in source code. Use environment variables."
+    pattern: '(?i)(secret|token|auth[_-]?token|access[_-]?token)\s*[:=]\s*["\u0027][^"\u0027]{8,}["\u0027]'
+    severity: "Critical"
+    language: "any"
+    cwe: "CWE-798"
+
+  - id: SAST023
+    name: "Hardcoded Database Credentials"
+    description: "Database credentials should never be hardcoded. Use environment variables or a configuration management system."
+    pattern: '(?i)(db[_-]?pass|database[_-]?password|mysql[_-]?password)\s*[:=]\s*["\u0027][^"\u0027]+["\u0027]'
+    severity: "Critical"
+    language: "any"
+    cwe: "CWE-798"
+
+  - id: SAST024
+    name: "AWS Access Key ID"
+    description: "AWS credentials should not be in source code. Use IAM roles or AWS Secrets Manager."
+    pattern: '(?i)(aws[_-]?access[_-]?key[_-]?id|AKIA)[A-Z0-9]{12,}'
+    severity: "Critical"
+    language: "any"
+    cwe: "CWE-798"
+
+  - id: SAST025
+    name: "Private Key in Code"
+    description: "Private keys must never be stored in source code. Use secure key management."
+    pattern: '-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----'
+    severity: "Critical"
+    language: "any"
+    cwe: "CWE-321"
+
+  # ===========================================
+  # WEAK CRYPTOGRAPHY
+  # ===========================================
+  
+  - id: SAST030
+    name: "Weak Hash (MD5)"
+    description: "MD5 is cryptographically broken and should not be used for security. Use SHA-256, bcrypt, or Argon2."
+    pattern: '(?i)(md5\s*\(|hashlib\.md5|MessageDigest\.getInstance\s*\(\s*["\u0027]MD5)'
     severity: "High"
-    language: "python"
+    language: "any"
     cwe: "CWE-327"
 
-  - id: SAST005
-    name: "Potential Command Injection"
-    description: "Use of os.system() with user-controllable data can allow an attacker to execute arbitrary system commands. Use the 'subprocess' module with shell=False instead."
-    pattern: 'os\.system\('
+  - id: SAST031
+    name: "Weak Hash (SHA1)"
+    description: "SHA1 is deprecated for security purposes. Use SHA-256 or stronger for new implementations."
+    pattern: '(?i)(sha1\s*\(|hashlib\.sha1|MessageDigest\.getInstance\s*\(\s*["\u0027]SHA-?1)'
+    severity: "Medium"
+    language: "any"
+    cwe: "CWE-327"
+
+  - id: SAST032
+    name: "Insecure Random (PHP)"
+    description: "rand() and mt_rand() are not cryptographically secure. Use random_bytes() or random_int() for security."
+    pattern: '(?i)\b(rand|mt_rand)\s*\('
+    severity: "Medium"
+    language: "php"
+    cwe: "CWE-330"
+
+  - id: SAST033
+    name: "Insecure Random (Python)"
+    description: "The random module is not cryptographically secure. Use secrets module for security-sensitive randomness."
+    pattern: 'import\s+random|from\s+random\s+import'
+    severity: "Low"
+    language: "python"
+    cwe: "CWE-330"
+
+  - id: SAST034
+    name: "Insecure Random (JavaScript)"
+    description: "Math.random() is not cryptographically secure. Use crypto.getRandomValues() for security."
+    pattern: 'Math\.random\s*\(\s*\)'
+    severity: "Low"
+    language: "javascript"
+    cwe: "CWE-330"
+
+  # ===========================================
+  # COMMAND INJECTION
+  # ===========================================
+  
+  - id: SAST040
+    name: "Command Injection (Python os.system)"
+    description: "os.system() with user input allows command injection. Use subprocess with shell=False and a list of arguments."
+    pattern: 'os\.system\s*\('
     severity: "Critical"
     language: "python"
     cwe: "CWE-78"
+
+  - id: SAST041
+    name: "Command Injection (Python subprocess shell=True)"
+    description: "Using subprocess with shell=True is dangerous with user input. Use shell=False with argument list."
+    pattern: 'subprocess\.(call|run|Popen)\s*\([^)]*shell\s*=\s*True'
+    severity: "High"
+    language: "python"
+    cwe: "CWE-78"
+
+  - id: SAST042
+    name: "Command Injection (PHP exec)"
+    description: "exec() with user-controlled input allows command execution. Validate and sanitize input, or use escapeshellarg()."
+    pattern: '(exec|shell_exec|system|passthru|popen|proc_open)\s*\([^)]*\$_(GET|POST|REQUEST)\['
+    severity: "Critical"
+    language: "php"
+    cwe: "CWE-78"
+
+  - id: SAST043
+    name: "Command Injection (PHP backticks)"
+    description: "Backtick operator executes shell commands. Avoid using it with user input."
+    pattern: '`[^`]*\$_(GET|POST|REQUEST)\[[^`]*`'
+    severity: "Critical"
+    language: "php"
+    cwe: "CWE-78"
+
+  - id: SAST044
+    name: "Command Injection (Node.js child_process)"
+    description: "Executing shell commands with user input is dangerous. Use spawn() with explicit arguments instead of exec()."
+    pattern: 'child_process\.(exec|execSync)\s*\('
+    severity: "High"
+    language: "javascript"
+    cwe: "CWE-78"
+
+  # ===========================================
+  # PATH TRAVERSAL / FILE INCLUSION
+  # ===========================================
+  
+  - id: SAST050
+    name: "Path Traversal (PHP include/require)"
+    description: "Including files based on user input allows path traversal and remote file inclusion. Validate input against a whitelist."
+    pattern: '(include|require|include_once|require_once)\s*\([^)]*\$_(GET|POST|REQUEST)\['
+    severity: "Critical"
+    language: "php"
+    cwe: "CWE-22"
+
+  - id: SAST051
+    name: "Path Traversal (Python open)"
+    description: "Opening files based on user input without validation allows path traversal. Validate and sanitize file paths."
+    pattern: 'open\s*\([^)]*\+[^)]*\)'
+    severity: "Medium"
+    language: "python"
+    cwe: "CWE-22"
+
+  - id: SAST052
+    name: "Path Traversal (Node.js fs)"
+    description: "File system operations with user input can lead to path traversal. Validate and normalize paths."
+    pattern: 'fs\.(readFile|writeFile|unlink|readdir)\s*\([^)]*\+[^)]*\)'
+    severity: "Medium"
+    language: "javascript"
+    cwe: "CWE-22"
+
+  # ===========================================
+  # INSECURE DESERIALIZATION
+  # ===========================================
+  
+  - id: SAST060
+    name: "Insecure Deserialization (PHP unserialize)"
+    description: "unserialize() with user input can lead to object injection attacks. Use JSON or validate serialized data."
+    pattern: 'unserialize\s*\([^)]*\$_(GET|POST|REQUEST|COOKIE)\['
+    severity: "Critical"
+    language: "php"
+    cwe: "CWE-502"
+
+  - id: SAST061
+    name: "Insecure Deserialization (Python pickle)"
+    description: "pickle.loads() with untrusted data allows arbitrary code execution. Use JSON or implement signing/verification."
+    pattern: 'pickle\.(loads|load)\s*\('
+    severity: "High"
+    language: "python"
+    cwe: "CWE-502"
+
+  - id: SAST062
+    name: "Insecure Deserialization (Python yaml unsafe)"
+    description: "yaml.load() without Loader parameter can execute arbitrary code. Use yaml.safe_load() instead."
+    pattern: 'yaml\.load\s*\([^)]*(?!Loader)'
+    severity: "High"
+    language: "python"
+    cwe: "CWE-502"
+
+  # ===========================================
+  # CODE INJECTION / EVAL
+  # ===========================================
+  
+  - id: SAST070
+    name: "Code Injection (PHP eval)"
+    description: "eval() executes arbitrary PHP code. Avoid it entirely or strictly validate input."
+    pattern: 'eval\s*\([^)]*\$_(GET|POST|REQUEST)\['
+    severity: "Critical"
+    language: "php"
+    cwe: "CWE-94"
+
+  - id: SAST071
+    name: "Code Injection (Python eval/exec)"
+    description: "eval() and exec() execute arbitrary code. Avoid them or use ast.literal_eval() for safe evaluation."
+    pattern: '(eval|exec)\s*\([^)]*\)'
+    severity: "High"
+    language: "python"
+    cwe: "CWE-94"
+
+  - id: SAST072
+    name: "Code Injection (JavaScript eval)"
+    description: "eval() executes arbitrary JavaScript. Avoid it entirely; use JSON.parse() for data or safer alternatives."
+    pattern: '\beval\s*\('
+    severity: "High"
+    language: "javascript"
+    cwe: "CWE-94"
+
+  - id: SAST073
+    name: "Code Injection (JavaScript Function constructor)"
+    description: "new Function() can execute arbitrary code like eval(). Avoid dynamic code generation."
+    pattern: 'new\s+Function\s*\('
+    severity: "High"
+    language: "javascript"
+    cwe: "CWE-94"
+
+  # ===========================================
+  # SERVER-SIDE TEMPLATE INJECTION (SSTI)
+  # ===========================================
+  
+  - id: SAST080
+    name: "SSTI (Python Jinja2)"
+    description: "Rendering user input directly in Jinja2 templates can lead to SSTI. Never pass raw user input to render_template_string()."
+    pattern: 'render_template_string\s*\([^)]*\+[^)]*\)'
+    severity: "High"
+    language: "python"
+    cwe: "CWE-1336"
+
+  - id: SAST081
+    name: "SSTI (PHP Twig)"
+    description: "Dynamic template rendering with user input can lead to SSTI. Avoid createTemplate() with user data."
+    pattern: 'createTemplate\s*\([^)]*\$_(GET|POST|REQUEST)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-1336"
+
+  # ===========================================
+  # INFORMATION DISCLOSURE
+  # ===========================================
+  
+  - id: SAST090
+    name: "Debug Mode Enabled"
+    description: "Debug mode should be disabled in production. It can expose sensitive information and stack traces."
+    pattern: '(?i)(DEBUG\s*[:=]\s*True|app\.debug\s*=\s*True|DEBUG_MODE\s*[:=]\s*1)'
+    severity: "Medium"
+    language: "any"
+    cwe: "CWE-215"
+
+  - id: SAST091
+    name: "Error Display Enabled (PHP)"
+    description: "Displaying errors in production exposes internal information. Set display_errors to Off in production."
+    pattern: 'display_errors\s*=\s*(On|1|true)'
+    severity: "Medium"
+    language: "php"
+    cwe: "CWE-209"
+
+  - id: SAST092
+    name: "Verbose Error Messages"
+    description: "Detailed error messages can leak sensitive information. Use generic error messages for users."
+    pattern: '(?i)error_reporting\s*\(\s*E_ALL\s*\)'
+    severity: "Low"
+    language: "php"
+    cwe: "CWE-209"
+
+  # ===========================================
+  # INSECURE CONFIGURATION
+  # ===========================================
+  
+  - id: SAST100
+    name: "CORS Allow All Origins"
+    description: "Allowing all origins (*) in CORS can expose your API to cross-origin attacks. Specify allowed origins explicitly."
+    pattern: '(?i)(Access-Control-Allow-Origin|cors.*origin)\s*[:=]\s*["\u0027]\*["\u0027]'
+    severity: "Medium"
+    language: "any"
+    cwe: "CWE-942"
+
+  - id: SAST101
+    name: "Insecure Cookie (Missing HttpOnly)"
+    description: "Cookies without HttpOnly flag can be accessed by JavaScript, enabling XSS attacks. Set HttpOnly flag."
+    pattern: 'setcookie\s*\([^)]+\)\s*(?!.*httponly)'
+    severity: "Medium"
+    language: "php"
+    cwe: "CWE-1004"
+
+  - id: SAST102
+    name: "Insecure Cookie (Missing Secure)"
+    description: "Cookies without Secure flag can be transmitted over HTTP. Set Secure flag for sensitive cookies."
+    pattern: '(?i)cookie.*secure\s*[:=]\s*false'
+    severity: "Medium"
+    language: "any"
+    cwe: "CWE-614"
+
+  # ===========================================
+  # OPEN REDIRECT
+  # ===========================================
+  
+  - id: SAST110
+    name: "Open Redirect (PHP)"
+    description: "Redirecting to user-supplied URLs allows phishing attacks. Validate redirect URLs against a whitelist."
+    pattern: 'header\s*\(\s*["\u0027]Location:\s*["\u0027]\s*\.\s*\$_(GET|POST|REQUEST)\['
+    severity: "Medium"
+    language: "php"
+    cwe: "CWE-601"
+
+  - id: SAST111
+    name: "Open Redirect (JavaScript)"
+    description: "Redirecting based on user input enables phishing. Validate URLs before redirecting."
+    pattern: '(window\.location|location\.href)\s*=\s*[^;]*(?:params|query|url|redirect)'
+    severity: "Medium"
+    language: "javascript"
+    cwe: "CWE-601"
+
+  # ===========================================
+  # SSRF (Server-Side Request Forgery)
+  # ===========================================
+  
+  - id: SAST120
+    name: "SSRF (PHP file_get_contents)"
+    description: "file_get_contents() with user-supplied URLs can lead to SSRF. Validate and whitelist allowed URLs."
+    pattern: 'file_get_contents\s*\([^)]*\$_(GET|POST|REQUEST)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-918"
+
+  - id: SAST121
+    name: "SSRF (PHP curl)"
+    description: "Using cURL with user-controlled URLs is dangerous. Validate and restrict allowed destinations."
+    pattern: 'curl_setopt\s*\([^)]*CURLOPT_URL[^)]*\$_(GET|POST|REQUEST)\['
+    severity: "High"
+    language: "php"
+    cwe: "CWE-918"
+
+  - id: SAST122
+    name: "SSRF (Python requests)"
+    description: "Making HTTP requests to user-supplied URLs can lead to SSRF. Validate URLs against a whitelist."
+    pattern: 'requests\.(get|post|put|delete|patch)\s*\([^)]*\+[^)]*\)'
+    severity: "Medium"
+    language: "python"
+    cwe: "CWE-918"

@@ -161,6 +161,17 @@ export const queryKeys = {
       String(projectId),
       proxyId ? String(proxyId) : "all",
     ] as const,
+  // SAST keys
+  sastHealth: (projectId: string | number) =>
+    ["sast-health", String(projectId)] as const,
+  sastRules: (projectId: string | number) =>
+    ["sast-rules", String(projectId)] as const,
+  sastRuns: (projectId: string | number) =>
+    ["sast-runs", String(projectId)] as const,
+  sastRun: (projectId: string | number, runId: string | number) =>
+    ["sast-run", String(projectId), String(runId)] as const,
+  sastFindings: (projectId: string | number, runId: string | number) =>
+    ["sast-findings", String(projectId), String(runId)] as const,
 };
 
 // ============================================================================
@@ -678,6 +689,293 @@ export function useResetWafProxyCounters(
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.wafProxy(projectId, proxyId),
+      });
+    },
+  });
+}
+
+// ============================================================================
+// SAST Types
+// ============================================================================
+
+export interface SastRule {
+  id: string;
+  name: string;
+  severity: string;
+  language: string;
+  cwe: string;
+  description: string;
+}
+
+export interface SastFinding {
+  rule_id: string;
+  rule_name: string;
+  description: string;
+  file_path: string;
+  line_number: number;
+  severity: string;
+  cwe: string;
+  code_snippet: string;
+  language?: string;
+}
+
+export interface SastScanInfo {
+  timestamp: string;
+  target_path: string;
+  total_findings: number;
+  severity_counts: Record<string, number>;
+  scan_duration_seconds: number;
+}
+
+export interface SastRunTask {
+  id: number;
+  status: string;
+  progress: number;
+  total_findings: number;
+  severity_counts: Record<string, number>;
+  has_report: boolean;
+}
+
+export interface SastRun {
+  id: number;
+  status: string;
+  target_value: string;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  task: SastRunTask | null;
+}
+
+// SAST API Responses
+interface SastHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+}
+
+interface SastRulesResponse {
+  total: number;
+  rules: SastRule[];
+}
+
+interface SastRunsResponse {
+  runs: SastRun[];
+}
+
+interface SastRunStatusResponse {
+  run: {
+    id: number;
+    status: string;
+    started_at: string | null;
+    finished_at: string | null;
+  };
+  task: {
+    id: number;
+    tool: string;
+    status: string;
+    progress: number;
+    meta: {
+      sast_scan_id?: string;
+      total_findings?: number;
+      severity_counts?: Record<string, number>;
+    };
+    has_report: boolean;
+    has_logs: boolean;
+  };
+}
+
+interface SastFindingsResponse {
+  scan_info: SastScanInfo;
+  findings: SastFinding[];
+  message?: string;
+}
+
+interface StartSastScanResponse {
+  message: string;
+  run_id: number;
+  task_id: number;
+  sast_scan_id: string;
+  status: string;
+}
+
+// ============================================================================
+// SAST Queries
+// ============================================================================
+
+/**
+ * Check if SAST service is available.
+ */
+export function useSastHealth(projectId: string | number | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sastHealth(projectId ?? ""),
+    queryFn: () =>
+      apiFetch<SastHealthResponse>(`/projects/${projectId}/sast/health`),
+    enabled: !!projectId,
+    staleTime: 1000 * 60, // 1 minute
+    retry: false,
+  });
+}
+
+/**
+ * Fetch available SAST rules.
+ */
+export function useSastRules(projectId: string | number | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sastRules(projectId ?? ""),
+    queryFn: () =>
+      apiFetch<SastRulesResponse>(`/projects/${projectId}/sast/rules`),
+    enabled: !!projectId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch all SAST runs for a project.
+ */
+export function useSastRuns(projectId: string | number | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sastRuns(projectId ?? ""),
+    queryFn: () =>
+      apiFetch<SastRunsResponse>(`/projects/${projectId}/sast/runs`),
+    enabled: !!projectId,
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: (query) => {
+      const runs = query.state.data?.runs;
+      const hasActiveRun = runs?.some(
+        (r) => r.status === "pending" || r.status === "running"
+      );
+      return hasActiveRun ? 3000 : false;
+    },
+  });
+}
+
+/**
+ * Fetch a single SAST run status.
+ */
+export function useSastRunStatus(
+  projectId: string | number | undefined,
+  runId: string | number | undefined
+) {
+  return useQuery({
+    queryKey: queryKeys.sastRun(projectId ?? "", runId ?? ""),
+    queryFn: () =>
+      apiFetch<SastRunStatusResponse>(
+        `/projects/${projectId}/sast/runs/${runId}`
+      ),
+    enabled: !!projectId && !!runId,
+    staleTime: 1000 * 3, // 3 seconds
+    refetchInterval: (query) => {
+      const status = query.state.data?.task?.status;
+      if (status === "pending" || status === "running") {
+        return 2000; // Poll every 2s while running
+      }
+      return false;
+    },
+  });
+}
+
+/**
+ * Fetch SAST findings for a run.
+ */
+export function useSastFindings(
+  projectId: string | number | undefined,
+  runId: string | number | undefined,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: queryKeys.sastFindings(projectId ?? "", runId ?? ""),
+    queryFn: () =>
+      apiFetch<SastFindingsResponse>(
+        `/projects/${projectId}/sast/runs/${runId}/findings`
+      ),
+    enabled: !!projectId && !!runId && enabled,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+// ============================================================================
+// SAST Mutations
+// ============================================================================
+
+/**
+ * Start a new SAST scan.
+ */
+export function useStartSastScan(projectId: string | number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      source_type: "zip" | "path";
+      source_file?: File;
+      source_path?: string;
+      output_format?: "json" | "html";
+    }) => {
+      const formData = new FormData();
+      formData.append("source_type", payload.source_type);
+
+      if (payload.source_type === "zip" && payload.source_file) {
+        formData.append("source_file", payload.source_file);
+      } else if (payload.source_type === "path" && payload.source_path) {
+        formData.append("source_path", payload.source_path);
+      }
+
+      if (payload.output_format) {
+        formData.append("output_format", payload.output_format);
+      }
+
+      // Use fetch directly for multipart form
+      const API_BASE = import.meta.env.VITE_API_URL || "/api";
+      const token = localStorage.getItem("auth_token");
+
+      // Get CSRF cookie first
+      await fetch(`${API_BASE.replace("/api", "")}/sanctum/csrf-cookie`, {
+        credentials: "include",
+      });
+
+      const xsrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = xsrfMatch ? decodeURIComponent(xsrfMatch[1]) : null;
+
+      const headers: HeadersInit = {
+        Accept: "application/json",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      if (xsrfToken) {
+        headers["X-XSRF-TOKEN"] = xsrfToken;
+      }
+
+      const res = await fetch(`${API_BASE}/projects/${projectId}/sast/runs`, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        let message = `Request failed: ${res.status}`;
+
+        // Handle specific HTTP status codes
+        if (res.status === 404) {
+          message = "Resource not found";
+        } else {
+          try {
+            const json = JSON.parse(text);
+            message = json.message || json.error || message;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
+
+      return res.json() as Promise<StartSastScanResponse>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sastRuns(projectId),
       });
     },
   });
