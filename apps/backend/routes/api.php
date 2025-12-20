@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
 use App\Http\Controllers\Api\RunStreamController;
+use App\Http\Controllers\Api\WafProxyController;
+use App\Http\Controllers\Api\WafLogController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,5 +70,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // SSE log streaming
     Route::get('/runs/{run}/stream', [RunStreamController::class, 'stream']);
+
+    // WAF Proxy routes
+    Route::prefix('waf')->group(function () {
+      Route::get('/proxies', [WafProxyController::class, 'index']);
+      Route::post('/proxies', [WafProxyController::class, 'store']);
+      Route::get('/proxies/{proxy}', [WafProxyController::class, 'show']);
+      Route::put('/proxies/{proxy}', [WafProxyController::class, 'update']);
+      Route::delete('/proxies/{proxy}', [WafProxyController::class, 'destroy']);
+      Route::post('/proxies/{proxy}/rotate-token', [WafProxyController::class, 'rotateToken']);
+      Route::post('/proxies/{proxy}/pause', [WafProxyController::class, 'pause']);
+      Route::post('/proxies/{proxy}/activate', [WafProxyController::class, 'activate']);
+      Route::post('/proxies/{proxy}/reset-counters', [WafProxyController::class, 'resetCounters']);
+      Route::get('/stats', [WafProxyController::class, 'stats']);
+      Route::get('/logs', [WafLogController::class, 'index']);
+      Route::get('/logs/summary', [WafLogController::class, 'summary']);
+    });
   });
 });

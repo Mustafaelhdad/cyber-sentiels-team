@@ -11,3 +11,8 @@ Artisan::command('inspire', function () {
 // Scheduled tasks
 Schedule::command('horizon:snapshot')->everyFiveMinutes();
 
+// WAF tasks
+Schedule::command('waf:update-counters')
+  ->everyMinute()
+  ->withoutOverlapping()
+  ->runInBackground();

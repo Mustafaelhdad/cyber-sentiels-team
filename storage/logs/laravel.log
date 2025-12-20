@@ -3194,3 +3194,131 @@
 #22 /var/www/backend/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #23 {main}
 "} 
+[2025-12-19 21:03:16] local.ERROR: Writing to directory /var/www/.config/psysh is not allowed. {"exception":"[object] (ErrorException(code: 0): Writing to directory /var/www/.config/psysh is not allowed. at /var/www/backend/vendor/psy/psysh/src/ConfigPaths.php:395)
+[stacktrace]
+#0 /var/www/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleError(1024, 'Writing to dire...', '/var/www/backen...', 395)
+#1 [internal function]: Illuminate\\Foundation\\Bootstrap\\HandleExceptions->Illuminate\\Foundation\\Bootstrap\\{closure}(1024, 'Writing to dire...', '/var/www/backen...', 395)
+#2 /var/www/backend/vendor/psy/psysh/src/ConfigPaths.php(395): trigger_error('Writing to dire...', 1024)
+#3 /var/www/backend/vendor/psy/psysh/src/ConfigPaths.php(424): Psy\\ConfigPaths::ensureDir('/var/www/.confi...')
+#4 /var/www/backend/vendor/psy/psysh/src/Configuration.php(683): Psy\\ConfigPaths::touchFileWithMkdir('/var/www/.confi...')
+#5 /var/www/backend/vendor/psy/psysh/src/Configuration.php(715): Psy\\Configuration->setHistoryFile('/var/www/.confi...')
+#6 /var/www/backend/vendor/psy/psysh/src/Configuration.php(852): Psy\\Configuration->getHistoryFile()
+#7 /var/www/backend/vendor/psy/psysh/src/Shell.php(95): Psy\\Configuration->getReadline()
+#8 /var/www/backend/vendor/laravel/tinker/src/Console/TinkerCommand.php(59): Psy\\Shell->__construct(Object(Psy\\Configuration))
+#9 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel\\Tinker\\Console\\TinkerCommand->handle()
+#10 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#11 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#12 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#13 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#14 /var/www/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate\\Container\\Container->call(Array)
+#15 /var/www/backend/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#16 /var/www/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#17 /var/www/backend/vendor/symfony/console/Application.php(1102): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#18 /var/www/backend/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(Laravel\\Tinker\\Console\\TinkerCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#19 /var/www/backend/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#20 /var/www/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#21 /var/www/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#22 /var/www/backend/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#23 {main}
+"} 
+[2025-12-19 21:19:19] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 21:47:25] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 21:48:46] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 21:48:57] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 21:57:04] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 21:59:06] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 22:00:01] local.ERROR: Writing to directory /var/www/.config/psysh is not allowed. {"exception":"[object] (ErrorException(code: 0): Writing to directory /var/www/.config/psysh is not allowed. at /var/www/backend/vendor/psy/psysh/src/ConfigPaths.php:395)
+[stacktrace]
+#0 /var/www/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleError(1024, 'Writing to dire...', '/var/www/backen...', 395)
+#1 [internal function]: Illuminate\\Foundation\\Bootstrap\\HandleExceptions->Illuminate\\Foundation\\Bootstrap\\{closure}(1024, 'Writing to dire...', '/var/www/backen...', 395)
+#2 /var/www/backend/vendor/psy/psysh/src/ConfigPaths.php(395): trigger_error('Writing to dire...', 1024)
+#3 /var/www/backend/vendor/psy/psysh/src/ConfigPaths.php(424): Psy\\ConfigPaths::ensureDir('/var/www/.confi...')
+#4 /var/www/backend/vendor/psy/psysh/src/Configuration.php(683): Psy\\ConfigPaths::touchFileWithMkdir('/var/www/.confi...')
+#5 /var/www/backend/vendor/psy/psysh/src/Configuration.php(715): Psy\\Configuration->setHistoryFile('/var/www/.confi...')
+#6 /var/www/backend/vendor/psy/psysh/src/Configuration.php(852): Psy\\Configuration->getHistoryFile()
+#7 /var/www/backend/vendor/psy/psysh/src/Shell.php(95): Psy\\Configuration->getReadline()
+#8 /var/www/backend/vendor/laravel/tinker/src/Console/TinkerCommand.php(59): Psy\\Shell->__construct(Object(Psy\\Configuration))
+#9 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel\\Tinker\\Console\\TinkerCommand->handle()
+#10 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#11 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#12 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#13 /var/www/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#14 /var/www/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate\\Container\\Container->call(Array)
+#15 /var/www/backend/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#16 /var/www/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#17 /var/www/backend/vendor/symfony/console/Application.php(1102): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#18 /var/www/backend/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(Laravel\\Tinker\\Console\\TinkerCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#19 /var/www/backend/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#20 /var/www/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#21 /var/www/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#22 /var/www/backend/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#23 {main}
+"} 
+[2025-12-19 22:00:32] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/var/www/backend/storage/app/waf/token_map.conf): Failed to open stream: Permission denied","path":"/var/www/backend/storage/app/waf/token_map.conf"} 
+[2025-12-19 22:01:57] local.INFO: WAF token map file regenerated {"path":"/var/www/backend/storage/app/waf/token_map.conf","proxies_count":1} 
+[2025-12-19 22:46:16] local.INFO: WAF token map file regenerated {"path":"/var/www/backend/storage/app/waf/token_map.conf","proxies_count":2} 
+[2025-12-19 23:04:19] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:06:14] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:06:22] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-19 23:06:25] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:06:35] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:06:49] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:06:52] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-19 23:06:58] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-19 23:06:59] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:07:09] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:07:14] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-19 23:57:25] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-19 23:57:35] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:57:42] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:57:52] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:58:02] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:58:13] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:58:23] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:58:33] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:58:44] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:58:54] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:59:05] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:59:15] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:59:25] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:59:35] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:59:46] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-19 23:59:56] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:00:06] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:00:17] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:00:27] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:00:37] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:00:59] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:02:36] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:02:46] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:50:52] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:50:52] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:51:03] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:52:57] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:53:07] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:53:17] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:53:28] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:53:38] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:53:48] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:53:59] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 00:54:09] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 01:07:57] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 01:09:15] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 01:09:20] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-20 01:09:31] local.ERROR: Failed to regenerate WAF token map file {"error":"file_put_contents(/shared/waf-map.json): Failed to open stream: Permission denied","path":"/shared/waf-map.json"} 
+[2025-12-20 01:09:35] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 01:44:40] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 01:44:41] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 01:44:51] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:03:11] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:03:12] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:03:22] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:25:51] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:25:51] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:26:06] local.INFO: WAF token map file regenerated (JSON) {"path":"/shared/waf-map.json","proxies_count":0} 
+[2025-12-20 02:26:13] local.INFO: WAF token map file regenerated (JSON) {"path":"/shared/waf-map.json","proxies_count":1} 
+[2025-12-20 02:26:31] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:26:35] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:27:05] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:28:05] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 
+[2025-12-20 02:30:49] local.DEBUG: Flask WAF log file not found {"path":"/var/log/waf/suspicious.log"} 

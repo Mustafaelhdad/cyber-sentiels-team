@@ -37,5 +37,12 @@ class Project extends Model
   {
     return $this->hasMany(Run::class);
   }
-}
 
+  /**
+   * Get the WAF proxies for the project.
+   */
+  public function wafProxies(): HasMany
+  {
+    return $this->hasMany(WafProxy::class);
+  }
+}

@@ -1,16 +1,54 @@
-from flask import Flask, request, jsonify, current_app
-import re, html, json, hashlib, time, unicodedata, urllib.parse
+from flask import Flask, request, jsonify, current_app, Response
+import re, html, json, hashlib, time, unicodedata, urllib.parse, os
+import requests as http_requests
 from collections import defaultdict
 from datetime import datetime
 from functools import wraps
-from typing import Tuple
+from typing import Tuple, Optional
 
 app = Flask(__name__)
+
+# ==============================================================================
+# Proxy Configuration
+# ==============================================================================
+MAP_FILE = os.getenv("WAF_MAP_FILE", "/shared/waf-map.json")
+PROXY_TIMEOUT = int(os.getenv("WAF_PROXY_TIMEOUT", "30"))
+
+# Hop-by-hop headers that should NOT be forwarded
+HOP_BY_HOP_HEADERS = {
+    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+    "te", "trailers", "transfer-encoding", "upgrade", "host"
+}
+
+# ==============================================================================
+# Initialize empty map file if it doesn't exist
+# ==============================================================================
+def ensure_map_file_exists():
+    """Create an empty map file if it doesn't exist."""
+    try:
+        map_dir = os.path.dirname(MAP_FILE)
+        if map_dir and not os.path.exists(map_dir):
+            os.makedirs(map_dir, exist_ok=True)
+        if not os.path.exists(MAP_FILE):
+            with open(MAP_FILE, "w", encoding="utf-8") as f:
+                json.dump({}, f)
+            print(f"[WAF] Created empty map file: {MAP_FILE}")
+    except Exception as e:
+        print(f"[WAF] Warning: Could not create map file: {e}")
+
+def ensure_log_dir_exists():
+    """Create log directory if it doesn't exist."""
+    try:
+        log_dir = os.path.dirname(LOG_FILE)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+    except Exception as e:
+        print(f"[WAF] Warning: Could not create log directory: {e}")
 
 RATE_LIMIT = 20           
 TIME_WINDOW = 60          
 WHITELIST_IPS = set()     
-LOG_FILE = "suspicious.log"
+LOG_FILE = os.getenv("WAF_LOG_FILE", "/app/logs/suspicious.log")
 SNIPPET_LEN = 150
 ENABLED = True
 MAX_PAYLOAD_LENGTH = 30000
@@ -77,6 +115,29 @@ PATTERNS = {
 COMPILED = {k: [re.compile(p, re.IGNORECASE | re.DOTALL) for p in v] for k, v in PATTERNS.items()}
 
 requests_log = defaultdict(list)
+
+# ==============================================================================
+# Proxy Helper Functions
+# ==============================================================================
+def resolve_origin(token: str) -> Optional[str]:
+    """
+    Resolve a WAF proxy token to its origin URL from the shared JSON map file.
+    Returns None if token is unknown or map file is unreadable.
+    """
+    try:
+        with open(MAP_FILE, "r", encoding="utf-8") as f:
+            mp = json.load(f)
+        origin = mp.get(token)
+        if not origin:
+            return None
+        return origin.rstrip("/")
+    except Exception:
+        return None
+
+
+def is_proxy_path() -> bool:
+    """Check if current request path is a WAF proxy path."""
+    return request.path.startswith("/waf/")
 
 def normalize_value(value: str) -> str:
     if value is None:
@@ -220,22 +281,24 @@ def waf_before():
     if view_func and getattr(view_func, "_skip_detection", False):
         return None
 
-    # allowlist validation (params/content-type)
-    provided_params = set()
-    try:
-        provided_params.update(request.args.keys())
-        provided_params.update(request.form.keys())
-        if request.is_json:
-            j = request.get_json(silent=True)
-            if isinstance(j, dict):
-                provided_params.update(j.keys())
-    except Exception:
-        pass
-    allowed, reason = is_path_allowed(path, method, provided_params, content_type)
-    if not allowed:
-        combined = make_combined_payload()
-        log_match(ip, "AllowListViolation", reason, method, path, ua, referer, combined)
-        return jsonify({"error": "Request not allowed (allowlist)"}), 403
+    # allowlist validation (params/content-type) - SKIP for proxy paths
+    # Proxy traffic goes to user's origin site, so we only do detection + rate limit
+    if not is_proxy_path():
+        provided_params = set()
+        try:
+            provided_params.update(request.args.keys())
+            provided_params.update(request.form.keys())
+            if request.is_json:
+                j = request.get_json(silent=True)
+                if isinstance(j, dict):
+                    provided_params.update(j.keys())
+        except Exception:
+            pass
+        allowed, reason = is_path_allowed(path, method, provided_params, content_type)
+        if not allowed:
+            combined = make_combined_payload()
+            log_match(ip, "AllowListViolation", reason, method, path, ua, referer, combined)
+            return jsonify({"error": "Request not allowed (allowlist)"}), 403
 
     # rate limiting
     now = time.time()
@@ -375,5 +438,93 @@ def shutdown():
     func()
     return jsonify({"message": "Server shutting down..."}), 200
 
+
+# ==============================================================================
+# WAF Reverse Proxy Routes
+# ==============================================================================
+@app.route("/waf/<token>/", defaults={"path": ""}, methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
+@app.route("/waf/<token>/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
+def waf_proxy(token, path):
+    """
+    Reverse proxy handler for WAF-protected traffic.
+    
+    Flow:
+    1. Resolve token → origin_url from shared JSON map
+    2. WAF detection already ran via @app.before_request (blocks if malicious)
+    3. Forward request to origin
+    4. Return origin response to client
+    """
+    # Resolve token to origin URL
+    origin = resolve_origin(token)
+    if not origin:
+        return jsonify({"error": "Unknown token"}), 404
+
+    # Build target URL (preserve path and query string)
+    upstream_url = origin + "/" + path
+    if request.query_string:
+        upstream_url += "?" + request.query_string.decode("utf-8", errors="replace")
+
+    # Copy headers, stripping hop-by-hop headers
+    headers = {
+        k: v for k, v in request.headers.items()
+        if k.lower() not in HOP_BY_HOP_HEADERS
+    }
+    # Add X-Forwarded-* headers for origin visibility
+    headers["X-Forwarded-For"] = request.remote_addr or "unknown"
+    headers["X-Forwarded-Proto"] = request.scheme
+    headers["X-Forwarded-Host"] = request.host
+
+    # Forward request to origin
+    try:
+        upstream_resp = http_requests.request(
+            method=request.method,
+            url=upstream_url,
+            data=request.get_data(),
+            headers=headers,
+            cookies=request.cookies,
+            allow_redirects=False,
+            timeout=PROXY_TIMEOUT,
+            stream=True  # Stream for large responses
+        )
+    except http_requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
+    except http_requests.exceptions.ConnectionError:
+        return jsonify({"error": "Could not connect to upstream"}), 502
+    except http_requests.exceptions.RequestException as e:
+        return jsonify({"error": "Upstream request failed"}), 502
+
+    # Build response, stripping hop-by-hop headers from upstream
+    resp_headers = [
+        (k, v) for k, v in upstream_resp.headers.items()
+        if k.lower() not in HOP_BY_HOP_HEADERS
+    ]
+
+    return Response(
+        upstream_resp.content,
+        status=upstream_resp.status_code,
+        headers=resp_headers
+    )
+
+
+@app.route("/health", methods=["GET"])
+@skip_detection
+def health():
+    """Health check endpoint for container orchestration."""
+    return jsonify({"status": "healthy", "service": "sentinel-waf-flask"}), 200
+
+
+# ==============================================================================
+# Initialize on module load (works with gunicorn)
+# ==============================================================================
+ensure_map_file_exists()
+ensure_log_dir_exists()
+print(f"[WAF] Flask WAF started - Map file: {MAP_FILE}, Log file: {LOG_FILE}")
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Production: use gunicorn or waitress
+    # Development: Flask dev server
+    host = os.getenv("WAF_HOST", "0.0.0.0")
+    port = int(os.getenv("WAF_PORT", "5000"))
+    debug = os.getenv("WAF_DEBUG", "false").lower() == "true"
+    app.run(host=host, port=port, debug=debug)

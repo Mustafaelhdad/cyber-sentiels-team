@@ -14,6 +14,64 @@ export interface Project {
   updated_at: string;
 }
 
+// WAF Proxy types
+export interface WafProxyCounters {
+  allowed: number;
+  blocked: number;
+  total: number;
+  block_rate: number;
+}
+
+export interface WafProxy {
+  id: number;
+  project_id: number;
+  name: string | null;
+  origin_url: string;
+  token: string;
+  waf_url: string;
+  status: "active" | "paused" | "disabled";
+  counters: WafProxyCounters;
+  last_request_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WafLog {
+  timestamp: string;
+  ip: string;
+  method: string;
+  path: string;
+  status: number;
+  size: number;
+  response_time: number;
+  token: string | null;
+  blocked: boolean;
+  rule_id?: string;
+  rule_msg?: string;
+  user_agent?: string;
+  referer?: string;
+}
+
+export interface WafStats {
+  total_proxies: number;
+  active_proxies: number;
+  total_requests: number;
+  total_allowed: number;
+  total_blocked: number;
+  block_rate: number;
+}
+
+export interface WafLogSummary {
+  total: number;
+  allowed: number;
+  blocked: number;
+  block_rate: number;
+  by_status: Record<string, number>;
+  by_method: Record<string, number>;
+  top_blocked_paths: Record<string, number>;
+  timeline: Record<string, { total: number; blocked: number; allowed: number }>;
+}
+
 export interface RunTask {
   id: number;
   run_id: number;
@@ -88,6 +146,21 @@ export const queryKeys = {
     ["run", String(projectId), String(runId)] as const,
   tasks: (projectId: string | number, runId: string | number) =>
     ["tasks", String(projectId), String(runId)] as const,
+  // WAF keys
+  wafProxies: (projectId: string | number) =>
+    ["waf-proxies", String(projectId)] as const,
+  wafProxy: (projectId: string | number, proxyId: string | number) =>
+    ["waf-proxy", String(projectId), String(proxyId)] as const,
+  wafStats: (projectId: string | number) =>
+    ["waf-stats", String(projectId)] as const,
+  wafLogs: (projectId: string | number, proxyId?: string | number) =>
+    ["waf-logs", String(projectId), proxyId ? String(proxyId) : "all"] as const,
+  wafLogSummary: (projectId: string | number, proxyId?: string | number) =>
+    [
+      "waf-log-summary",
+      String(projectId),
+      proxyId ? String(proxyId) : "all",
+    ] as const,
 };
 
 // ============================================================================
@@ -290,6 +363,320 @@ export function useCancelRun(
       queryClient.invalidateQueries({ queryKey: queryKeys.runs(projectId) });
       queryClient.invalidateQueries({
         queryKey: queryKeys.tasks(projectId, runId),
+      });
+    },
+  });
+}
+
+// ============================================================================
+// WAF Proxy Queries
+// ============================================================================
+
+interface WafProxiesResponse {
+  data: WafProxy[];
+}
+
+interface WafProxyResponse {
+  proxy: WafProxy;
+}
+
+interface WafStatsResponse {
+  stats: WafStats;
+}
+
+interface WafLogsResponse {
+  logs: WafLog[];
+  count: number;
+}
+
+interface WafLogSummaryResponse {
+  summary: WafLogSummary;
+}
+
+/**
+ * Fetch all WAF proxies for a project.
+ */
+export function useWafProxies(projectId: string | number | undefined) {
+  return useQuery({
+    queryKey: queryKeys.wafProxies(projectId ?? ""),
+    queryFn: () =>
+      apiFetch<WafProxiesResponse>(`/projects/${projectId}/waf/proxies`),
+    enabled: !!projectId,
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+/**
+ * Fetch a single WAF proxy.
+ */
+export function useWafProxy(
+  projectId: string | number | undefined,
+  proxyId: string | number | undefined
+) {
+  return useQuery({
+    queryKey: queryKeys.wafProxy(projectId ?? "", proxyId ?? ""),
+    queryFn: () =>
+      apiFetch<WafProxyResponse>(
+        `/projects/${projectId}/waf/proxies/${proxyId}`
+      ),
+    enabled: !!projectId && !!proxyId,
+    staleTime: 1000 * 10, // 10 seconds
+  });
+}
+
+/**
+ * Fetch WAF stats for a project.
+ */
+export function useWafStats(projectId: string | number | undefined) {
+  return useQuery({
+    queryKey: queryKeys.wafStats(projectId ?? ""),
+    queryFn: () =>
+      apiFetch<WafStatsResponse>(`/projects/${projectId}/waf/stats`),
+    enabled: !!projectId,
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+/**
+ * Fetch WAF logs for a project (optionally filtered by proxy).
+ */
+export function useWafLogs(
+  projectId: string | number | undefined,
+  proxyId?: string | number,
+  limit = 100
+) {
+  return useQuery({
+    queryKey: queryKeys.wafLogs(projectId ?? "", proxyId),
+    queryFn: () => {
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (proxyId) params.append("proxy_id", String(proxyId));
+      return apiFetch<WafLogsResponse>(
+        `/projects/${projectId}/waf/logs?${params}`
+      );
+    },
+    enabled: !!projectId,
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch WAF log summary for a project.
+ */
+export function useWafLogSummary(
+  projectId: string | number | undefined,
+  proxyId?: string | number
+) {
+  return useQuery({
+    queryKey: queryKeys.wafLogSummary(projectId ?? "", proxyId),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (proxyId) params.append("proxy_id", String(proxyId));
+      const queryString = params.toString();
+      return apiFetch<WafLogSummaryResponse>(
+        `/projects/${projectId}/waf/logs/summary${
+          queryString ? `?${queryString}` : ""
+        }`
+      );
+    },
+    enabled: !!projectId,
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+// ============================================================================
+// WAF Proxy Mutations
+// ============================================================================
+
+interface CreateWafProxyPayload {
+  name?: string;
+  origin_url: string;
+}
+
+interface UpdateWafProxyPayload {
+  name?: string;
+  origin_url?: string;
+  status?: "active" | "paused" | "disabled";
+}
+
+/**
+ * Create a new WAF proxy for a project.
+ */
+export function useCreateWafProxy(projectId: string | number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateWafProxyPayload) =>
+      apiFetch<{ message: string; proxy: WafProxy }>(
+        `/projects/${projectId}/waf/proxies`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafStats(projectId),
+      });
+    },
+  });
+}
+
+/**
+ * Update a WAF proxy.
+ */
+export function useUpdateWafProxy(
+  projectId: string | number,
+  proxyId: string | number
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateWafProxyPayload) =>
+      apiFetch<{ message: string; proxy: WafProxy }>(
+        `/projects/${projectId}/waf/proxies/${proxyId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxy(projectId, proxyId),
+      });
+    },
+  });
+}
+
+/**
+ * Delete a WAF proxy.
+ */
+export function useDeleteWafProxy(projectId: string | number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (proxyId: number) =>
+      apiFetch<void>(`/projects/${projectId}/waf/proxies/${proxyId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafStats(projectId),
+      });
+    },
+  });
+}
+
+/**
+ * Rotate a WAF proxy token.
+ */
+export function useRotateWafProxyToken(
+  projectId: string | number,
+  proxyId: string | number
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ message: string; proxy: WafProxy }>(
+        `/projects/${projectId}/waf/proxies/${proxyId}/rotate-token`,
+        { method: "POST" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxy(projectId, proxyId),
+      });
+    },
+  });
+}
+
+/**
+ * Pause a WAF proxy.
+ */
+export function usePauseWafProxy(
+  projectId: string | number,
+  proxyId: string | number
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ message: string; proxy: WafProxy }>(
+        `/projects/${projectId}/waf/proxies/${proxyId}/pause`,
+        { method: "POST" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxy(projectId, proxyId),
+      });
+    },
+  });
+}
+
+/**
+ * Activate a WAF proxy.
+ */
+export function useActivateWafProxy(
+  projectId: string | number,
+  proxyId: string | number
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ message: string; proxy: WafProxy }>(
+        `/projects/${projectId}/waf/proxies/${proxyId}/activate`,
+        { method: "POST" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxy(projectId, proxyId),
+      });
+    },
+  });
+}
+
+/**
+ * Reset counters for a WAF proxy.
+ */
+export function useResetWafProxyCounters(
+  projectId: string | number,
+  proxyId: string | number
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ message: string; proxy: WafProxy }>(
+        `/projects/${projectId}/waf/proxies/${proxyId}/reset-counters`,
+        { method: "POST" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxies(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wafProxy(projectId, proxyId),
       });
     },
   });

@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     default-mysql-client \
     zip \
     unzip \
-    supervisor
+    supervisor \
+    gosu
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -33,11 +34,20 @@ WORKDIR /var/www/backend
 # Copy existing application
 COPY ./apps/backend /var/www/backend
 
+# Create shared directory for WAF map file (volume will be mounted here)
+# This ensures the directory exists and has correct permissions
+RUN mkdir -p /shared /var/log/waf \
+    && chown -R www-data:www-data /shared /var/log/waf \
+    && chmod 775 /shared /var/log/waf
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/backend
 
-USER www-data
+# Copy entrypoint script and fix line endings (Windows CRLF to Unix LF)
+COPY ./infra/docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 9000
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["php-fpm"]
 

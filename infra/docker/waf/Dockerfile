@@ -10,15 +10,21 @@ COPY proxy_params.conf /etc/nginx/includes/proxy_params.conf
 COPY modsecurity.conf /etc/modsecurity.d/modsecurity-override.conf
 COPY crs-setup.conf /etc/modsecurity.d/owasp-crs/crs-setup.conf
 
+# Copy default token map to the shared volume path (overwritten at runtime)
+COPY waf_token_map.conf /etc/nginx/includes/waf_map/token_map.conf
+
 # Switch to root for setup
 USER root
 
-# Create directories
+# Create directories and set permissions
 RUN mkdir -p /var/www/certbot \
     && mkdir -p /var/log/modsecurity \
-    && mkdir -p /etc/nginx/includes \
+    && mkdir -p /var/log/nginx \
+    && mkdir -p /etc/nginx/includes/waf_map \
     && chown -R nginx:nginx /var/log/modsecurity \
-    && chown -R nginx:nginx /var/www/certbot
+    && chown -R nginx:nginx /var/log/nginx \
+    && chown -R nginx:nginx /var/www/certbot \
+    && chown -R nginx:nginx /etc/nginx/includes
 
 # Add connection upgrade map for WebSocket support
 RUN echo 'map $http_upgrade $connection_upgrade { default upgrade; "" close; }' > /etc/nginx/conf.d/00-connection-upgrade.conf
