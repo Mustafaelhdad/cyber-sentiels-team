@@ -3348,3 +3348,4 @@
 #19 /var/www/backend/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #20 {main}
 "} 
+[2025-12-20 04:06:52] local.INFO: WAF token map file regenerated (JSON) {"path":"/shared/waf-map.json","proxies_count":2} 
