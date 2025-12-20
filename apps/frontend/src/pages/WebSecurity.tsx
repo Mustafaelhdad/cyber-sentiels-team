@@ -237,7 +237,7 @@ export default function WebSecurity() {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                   {proxies.map((proxy) => (
                     <WafProxyCard
                       key={proxy.id}

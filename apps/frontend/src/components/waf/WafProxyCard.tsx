@@ -81,18 +81,18 @@ export default function WafProxyCard({ proxy, projectId }: WafProxyCardProps) {
     resetMutation.isPending;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between gap-2 mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
             {proxy.name || "Unnamed Proxy"}
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 break-all line-clamp-2 sm:truncate">
             Origin: {proxy.origin_url}
           </p>
         </div>
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
               STATUS_COLORS[proxy.status] || STATUS_COLORS.active
@@ -188,13 +188,13 @@ export default function WafProxyCard({ proxy, projectId }: WafProxyCardProps) {
         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
           WAF URL (send traffic here)
         </label>
-        <div className="flex items-center gap-2">
-          <code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-900 rounded-md text-sm text-gray-800 dark:text-gray-200 font-mono truncate">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-900 rounded-md text-xs sm:text-sm text-gray-800 dark:text-gray-200 font-mono break-all sm:truncate">
             {proxy.waf_url}
           </code>
           <button
             onClick={() => copyToClipboard(proxy.waf_url)}
-            className="px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+            className="px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shrink-0"
           >
             {copied ? "Copied!" : "Copy"}
           </button>
@@ -202,27 +202,27 @@ export default function WafProxyCard({ proxy, projectId }: WafProxyCardProps) {
       </div>
 
       {/* Counters */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
+        <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
             {proxy.counters.total.toLocaleString()}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
         </div>
-        <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+        <div className="text-center p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
             {proxy.counters.allowed.toLocaleString()}
           </p>
           <p className="text-xs text-green-600 dark:text-green-400">Allowed</p>
         </div>
-        <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+        <div className="text-center p-2 sm:p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+          <p className="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400">
             {proxy.counters.blocked.toLocaleString()}
           </p>
           <p className="text-xs text-red-600 dark:text-red-400">Blocked</p>
         </div>
-        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="text-center p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
             {proxy.counters.block_rate}%
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">Block Rate</p>
