@@ -45,9 +45,7 @@ export default function WebSecurity() {
   const [selectedSastRun, setSelectedSastRun] = useState<number | null>(null);
 
   // Validate that the stored project actually exists on the server
-  const { data: projectData, isError: projectError } = useProject(
-    currentProject?.id
-  );
+  const { isError: projectError } = useProject(currentProject?.id);
 
   // Clear invalid project from storage if it doesn't exist on server
   useEffect(() => {
