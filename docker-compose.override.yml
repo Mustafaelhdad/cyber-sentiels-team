@@ -1,0 +1,13 @@
+# Development override - exposes nginx directly when WAF is not running
+# This file is automatically loaded by docker-compose alongside docker-compose.yml
+#
+# Use this when:
+# - WAF container is not building/running
+# - You want direct access to backend without WAF protection
+#
+# To disable: rename or delete this file
+
+services:
+  nginx:
+    ports:
+      - "80:8080"

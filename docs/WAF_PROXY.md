@@ -147,15 +147,15 @@ Response:
 
 The Flask WAF detects and blocks the following attack types:
 
-| Attack Type                  | Examples                                        |
-| ---------------------------- | ----------------------------------------------- |
-| SQL Injection                | `' OR 1=1--`, `UNION SELECT`, `DROP TABLE`      |
-| XSS / HTML Injection         | `<script>`, `javascript:`, `onerror=`           |
-| Command Injection            | `; ls`, `&& whoami`, backtick execution         |
-| Server-Side Template Injection | `{{...}}`, `${...}`, `<%...%>`                |
-| NoSQL / LDAP / XPath         | `$where`, `$regex`, `(uid=)`                    |
-| Email Header Injection       | CRLF in headers (`\r\n`)                        |
-| Object Deserialization       | PHP serialized objects, Python pickle           |
+| Attack Type                    | Examples                                   |
+| ------------------------------ | ------------------------------------------ |
+| SQL Injection                  | `' OR 1=1--`, `UNION SELECT`, `DROP TABLE` |
+| XSS / HTML Injection           | `<script>`, `javascript:`, `onerror=`      |
+| Command Injection              | `; ls`, `&& whoami`, backtick execution    |
+| Server-Side Template Injection | `{{...}}`, `${...}`, `<%...%>`             |
+| NoSQL / LDAP / XPath           | `$where`, `$regex`, `(uid=)`               |
+| Email Header Injection         | CRLF in headers (`\r\n`)                   |
+| Object Deserialization         | PHP serialized objects, Python pickle      |
 
 ### Rate Limiting
 
@@ -231,11 +231,11 @@ curl http://localhost:5000/health
 
 ### Container Services
 
-| Service | Container Name        | Port  | Description           |
-| ------- | --------------------- | ----- | --------------------- |
-| waf     | sentinel_waf_flask    | 5000  | Flask WAF proxy       |
-| nginx   | sentinel_nginx        | 80,443| Public gateway        |
-| backend | sentinel_backend      | 9000  | Laravel PHP-FPM       |
+| Service | Container Name     | Port   | Description     |
+| ------- | ------------------ | ------ | --------------- |
+| waf     | sentinel_waf_flask | 5000   | Flask WAF proxy |
+| nginx   | sentinel_nginx     | 80,443 | Public gateway  |
+| backend | sentinel_backend   | 9000   | Laravel PHP-FPM |
 
 ## Commands
 
