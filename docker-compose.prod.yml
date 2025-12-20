@@ -24,7 +24,13 @@ services:
     networks:
       - sentinel_net
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -219,7 +225,8 @@ services:
     networks:
       - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/JSON/core/view/version/"]
+      test:
+        ["CMD", "curl", "-f", "http://localhost:8080/JSON/core/view/version/"]
       interval: 30s
       timeout: 10s
       retries: 5
