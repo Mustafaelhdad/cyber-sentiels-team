@@ -65,7 +65,7 @@ export function SastScanForm({ projectId, onScanStarted }: SastScanFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Source Type Toggle */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Source Type
           </label>
@@ -93,7 +93,7 @@ export function SastScanForm({ projectId, onScanStarted }: SastScanFormProps) {
               Server Path
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* ZIP File Upload */}
         {sourceType === "zip" && (
