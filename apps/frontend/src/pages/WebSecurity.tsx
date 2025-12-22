@@ -346,7 +346,7 @@ export default function WebSecurity() {
 
             <form className="space-y-4" onSubmit={handleSubmit}>
               {/* Target Type Toggle */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Target Type
                 </label>
@@ -380,7 +380,7 @@ export default function WebSecurity() {
                     Git Repo
                   </button>
                 </div>
-              </div>
+              </div> */}
 
               {/* Target Input */}
               <div>
