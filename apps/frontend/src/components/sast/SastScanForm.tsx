@@ -7,7 +7,7 @@ interface SastScanFormProps {
 }
 
 export function SastScanForm({ projectId, onScanStarted }: SastScanFormProps) {
-  const [sourceType, setSourceType] = useState<"zip" | "path">("zip");
+  const [sourceType] = useState<"zip" | "path">("zip");
   const [sourcePath, setSourcePath] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [outputFormat, setOutputFormat] = useState<"json" | "html">("json");

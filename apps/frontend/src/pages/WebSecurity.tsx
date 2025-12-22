@@ -40,7 +40,7 @@ type TabType = "dast" | "waf" | "sast";
 export default function WebSecurity() {
   const { currentProject, clearCurrentProject } = useCurrentProject();
   const [activeTab, setActiveTab] = useState<TabType>("waf");
-  const [targetType, setTargetType] = useState<TargetType>("url");
+  const [targetType] = useState<TargetType>("url");
   const [targetValue, setTargetValue] = useState("");
   const [selectedSastRun, setSelectedSastRun] = useState<number | null>(null);
 
