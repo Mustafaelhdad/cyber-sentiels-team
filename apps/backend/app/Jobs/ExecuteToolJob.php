@@ -24,14 +24,16 @@ class ExecuteToolJob implements ShouldQueue
   /**
    * The maximum number of seconds the job can run.
    */
-  public int $timeout = 3600; // 1 hour
+  public int $timeout;
 
   /**
    * Create a new job instance.
    */
   public function __construct(
     public RunTask $task
-  ) {}
+  ) {
+    $this->timeout = (int) config('services.zap.job_timeout_seconds', 2400);
+  }
 
   /**
    * Execute the job.
@@ -83,6 +85,10 @@ class ExecuteToolJob implements ShouldQueue
       throw new \Exception('ZAP service is not available');
     }
     $zapService->log($this->task, 'INFO', 'ZAP service is available');
+
+    // Apply safe defaults before scanning
+    $zapService->applySafetyLimits();
+    $zapService->log($this->task, 'INFO', 'Applied ZAP guard rails (threads, rate limit, depth, duration)');
 
     // Start fresh session
     $zapService->newSession();
@@ -145,7 +151,7 @@ class ExecuteToolJob implements ShouldQueue
    */
   protected function waitForSpider(ZapService $zapService, int $spiderId): void
   {
-    $maxWait = 300; // 5 minutes
+    $maxWait = $zapService->spiderTimeoutSeconds();
     $waited = 0;
     $interval = 5;
     $lastLoggedProgress = 0;
@@ -171,8 +177,10 @@ class ExecuteToolJob implements ShouldQueue
       $waited += $interval;
     }
 
-    $zapService->log($this->task, 'WARN', 'Spider scan timeout reached');
-    Log::warning("Spider scan timeout", ['task_id' => $this->task->id]);
+    $zapService->log($this->task, 'WARN', "Spider scan timeout reached after {$maxWait}s, stopping scan");
+    $zapService->stopSpider($spiderId);
+    Log::warning("Spider scan timeout", ['task_id' => $this->task->id, 'timeout_seconds' => $maxWait]);
+    throw new \Exception("Spider scan timed out after {$maxWait} seconds");
   }
 
   /**
@@ -180,7 +188,7 @@ class ExecuteToolJob implements ShouldQueue
    */
   protected function waitForActiveScan(ZapService $zapService, int $scanId): void
   {
-    $maxWait = 1800; // 30 minutes
+    $maxWait = $zapService->activeScanTimeoutSeconds();
     $waited = 0;
     $interval = 10;
     $lastLoggedProgress = 0;
@@ -206,8 +214,10 @@ class ExecuteToolJob implements ShouldQueue
       $waited += $interval;
     }
 
-    $zapService->log($this->task, 'WARN', 'Active scan timeout reached');
-    Log::warning("Active scan timeout", ['task_id' => $this->task->id]);
+    $zapService->log($this->task, 'WARN', "Active scan timeout reached after {$maxWait}s, stopping scan");
+    $zapService->stopActiveScan($scanId);
+    Log::warning("Active scan timeout", ['task_id' => $this->task->id, 'timeout_seconds' => $maxWait]);
+    throw new \Exception("Active scan timed out after {$maxWait} seconds");
   }
 
   /**

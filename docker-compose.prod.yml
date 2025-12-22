@@ -220,6 +220,11 @@ services:
     image: ghcr.io/zaproxy/zaproxy:stable
     container_name: sentinel_zap
     command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.disablekey=true
+    mem_limit: 3g
+    cpus: "1.5"
+    pids_limit: 512
+    environment:
+      - JAVA_OPTS=-Xmx2048m
     volumes:
       - zap_data:/zap/wrk
     networks:

@@ -11,12 +11,30 @@ class ZapService
   protected string $baseUrl;
   protected ?string $apiKey;
   protected ArtifactStorageService $artifactStorage;
+  protected int $spiderMaxDepth;
+  protected int $spiderMaxChildren;
+  protected int $spiderThreadCount;
+  protected int $spiderTimeoutSeconds;
+  protected int $activeScanTimeoutSeconds;
+  protected int $ascanThreadPerHost;
+  protected int $ascanDelayMs;
+  protected int $ascanMaxDurationMinutes;
 
   public function __construct(ArtifactStorageService $artifactStorage)
   {
     $this->baseUrl = config('services.zap.host', 'http://zap:8080');
     $this->apiKey = config('services.zap.api_key');
     $this->artifactStorage = $artifactStorage;
+
+    $config = config('services.zap');
+    $this->spiderMaxDepth = (int) data_get($config, 'spider_max_depth', 3);
+    $this->spiderMaxChildren = (int) data_get($config, 'spider_max_children', 150);
+    $this->spiderThreadCount = (int) data_get($config, 'spider_thread_count', 2);
+    $this->spiderTimeoutSeconds = (int) data_get($config, 'spider_timeout_seconds', 300);
+    $this->activeScanTimeoutSeconds = (int) data_get($config, 'active_scan_timeout_seconds', 1500);
+    $this->ascanThreadPerHost = (int) data_get($config, 'ascan_thread_per_host', 2);
+    $this->ascanDelayMs = (int) data_get($config, 'ascan_delay_ms', 200);
+    $this->ascanMaxDurationMinutes = (int) data_get($config, 'ascan_max_duration_minutes', 25);
   }
 
   /**
@@ -43,6 +61,19 @@ class ZapService
   }
 
   /**
+   * Apply conservative defaults to keep scans lightweight.
+   */
+  public function applySafetyLimits(): void
+  {
+    $this->callAction('spider/action/setOptionMaxDepth/', ['Integer' => $this->spiderMaxDepth]);
+    $this->callAction('spider/action/setOptionMaxChildren/', ['Integer' => $this->spiderMaxChildren]);
+    $this->callAction('spider/action/setOptionThreadCount/', ['Integer' => $this->spiderThreadCount]);
+    $this->callAction('ascan/action/setOptionThreadPerHost/', ['Integer' => $this->ascanThreadPerHost]);
+    $this->callAction('ascan/action/setOptionDelayInMs/', ['Integer' => $this->ascanDelayMs]);
+    $this->callAction('ascan/action/setOptionMaxScanDurationInMins/', ['Integer' => $this->ascanMaxDurationMinutes]);
+  }
+
+  /**
    * Get spider scan status (0-100).
    */
   public function getSpiderStatus(int $scanId): int
@@ -58,6 +89,16 @@ class ZapService
       Log::error('ZAP Spider status error', ['error' => $e->getMessage()]);
       return 0;
     }
+  }
+
+  public function spiderTimeoutSeconds(): int
+  {
+    return $this->spiderTimeoutSeconds;
+  }
+
+  public function activeScanTimeoutSeconds(): int
+  {
+    return $this->activeScanTimeoutSeconds;
   }
 
   /**
@@ -99,6 +140,22 @@ class ZapService
       Log::error('ZAP Active scan status error', ['error' => $e->getMessage()]);
       return 0;
     }
+  }
+
+  /**
+   * Stop a spider by ID.
+   */
+  public function stopSpider(int $scanId): bool
+  {
+    return $this->callAction('spider/action/stop/', ['scanId' => $scanId]);
+  }
+
+  /**
+   * Stop an active scan by ID.
+   */
+  public function stopActiveScan(int $scanId): bool
+  {
+    return $this->callAction('ascan/action/stop/', ['scanId' => $scanId]);
   }
 
   /**
@@ -255,6 +312,32 @@ class ZapService
 
       return $response->successful();
     } catch (\Exception $e) {
+      return false;
+    }
+  }
+
+  /**
+   * Generic helper for ZAP actions that don't return data.
+   */
+  protected function callAction(string $path, array $params = []): bool
+  {
+    try {
+      $response = Http::get("{$this->baseUrl}/JSON/{$path}", array_merge(['apikey' => $this->apiKey], $params));
+
+      if ($response->successful()) {
+        return true;
+      }
+
+      Log::warning('ZAP action failed', [
+        'path' => $path,
+        'body' => $response->body(),
+      ]);
+      return false;
+    } catch (\Exception $e) {
+      Log::error('ZAP action error', [
+        'path' => $path,
+        'error' => $e->getMessage(),
+      ]);
       return false;
     }
   }

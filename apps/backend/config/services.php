@@ -40,6 +40,15 @@ return [
   'zap' => [
     'host' => env('ZAP_HOST', 'http://zap:8080'),
     'api_key' => env('ZAP_API_KEY', ''),
+    'spider_max_depth' => env('ZAP_SPIDER_MAX_DEPTH', 3),
+    'spider_max_children' => env('ZAP_SPIDER_MAX_CHILDREN', 150),
+    'spider_thread_count' => env('ZAP_SPIDER_THREAD_COUNT', 2),
+    'spider_timeout_seconds' => env('ZAP_SPIDER_TIMEOUT_SECONDS', 300),
+    'ascan_thread_per_host' => env('ZAP_ASCAN_THREAD_PER_HOST', 2),
+    'ascan_delay_ms' => env('ZAP_ASCAN_DELAY_MS', 200),
+    'ascan_max_duration_minutes' => env('ZAP_ASCAN_MAX_DURATION_MINUTES', 25),
+    'active_scan_timeout_seconds' => env('ZAP_ACTIVE_SCAN_TIMEOUT_SECONDS', 1500),
+    'job_timeout_seconds' => env('ZAP_JOB_TIMEOUT_SECONDS', 2400),
   ],
 
   /*
