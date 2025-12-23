@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\SastController;
 use App\Http\Controllers\Api\WafProxyController;
 use App\Http\Controllers\Api\WafLogController;
 use App\Http\Controllers\RaspIncidentController;
+use App\Http\Controllers\RaspDemoController;
+use App\Http\Controllers\RaspTestRunController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -101,6 +103,17 @@ Route::middleware('auth:sanctum')->group(function () {
       Route::get('/runs/{run}/download-html', [SastController::class, 'downloadHtmlReport']);
       Route::get('/runs/{run}/download-pdf', [SastController::class, 'downloadPdfReport']);
     });
+
+    // RASP Test Runs (project-scoped with history and reports)
+    Route::prefix('rasp')->group(function () {
+      Route::get('/runs', [RaspTestRunController::class, 'index']);
+      Route::post('/runs', [RaspTestRunController::class, 'store']);
+      Route::get('/runs/stats', [RaspTestRunController::class, 'stats']);
+      Route::get('/runs/{run}', [RaspTestRunController::class, 'show']);
+      Route::delete('/runs/{run}', [RaspTestRunController::class, 'destroy']);
+      Route::get('/runs/{run}/report', [RaspTestRunController::class, 'downloadReport']);
+      Route::get('/runs/{run}/report/view', [RaspTestRunController::class, 'viewReport']);
+    });
   });
 
   // RASP routes (global, not project-scoped)
@@ -111,5 +124,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/stats', [RaspIncidentController::class, 'stats']);
     Route::get('/detections', [RaspIncidentController::class, 'detections']);
     Route::get('/alerts', [RaspIncidentController::class, 'alerts']);
+
+    // RASP Demo routes for live testing
+    Route::prefix('demo')->group(function () {
+      Route::get('/health', [RaspDemoController::class, 'health']);
+      Route::post('/run-tests', [RaspDemoController::class, 'runTests']);
+      Route::post('/simulate', [RaspDemoController::class, 'simulate']);
+      Route::get('/results', [RaspDemoController::class, 'results']);
+      Route::delete('/clear', [RaspDemoController::class, 'clear']);
+    });
   });
 });

@@ -1044,9 +1044,9 @@ interface RaspIncidentsResponse {
   total: number;
 }
 
-interface RaspStatsResponse extends RaspStats {}
+type RaspStatsResponse = RaspStats;
 
-interface RaspDetectionsResponse extends RaspDetections {}
+type RaspDetectionsResponse = RaspDetections;
 
 interface RaspAlertsResponse {
   data: RaspIncident[];
@@ -1175,4 +1175,404 @@ export function useRaspTrace(traceId: string | undefined) {
     enabled: !!traceId,
     staleTime: 1000 * 60, // 1 minute
   });
+}
+
+// ============================================================================
+// RASP Demo Types
+// ============================================================================
+
+export interface RaspDemoHealthResponse {
+  status: "online" | "degraded" | "offline";
+  service: string;
+  details?: Record<string, unknown>;
+  error?: string;
+  in_app_rasp: {
+    enabled: boolean;
+    mode: string;
+  };
+}
+
+export interface RaspDemoTestPayloadResult {
+  payload: string;
+  detected: boolean;
+  incident_id: number;
+  trace_id: string;
+  external_reported: boolean;
+}
+
+export interface RaspDemoTestResult {
+  test_type: string;
+  name: string;
+  description: string;
+  severity: string;
+  total_payloads: number;
+  detected: number;
+  detection_rate: number;
+  payloads: RaspDemoTestPayloadResult[];
+}
+
+export interface RaspDemoRunTestsResponse {
+  status: string;
+  message: string;
+  summary: {
+    total_tests: number;
+    total_detected: number;
+    detection_rate: number;
+    rasp_mode: string;
+  };
+  results: RaspDemoTestResult[];
+  timestamp: string;
+}
+
+export interface RaspDemoSimulateResponse {
+  status: string;
+  message: string;
+  incident: {
+    id: number;
+    event_id: string;
+    trace_id: string;
+    attack_type: string;
+    attack_name: string;
+    severity: string;
+    payload: string;
+    action: string;
+    occurred_at: string;
+  };
+  external_service_reported: boolean;
+  rasp_mode: string;
+}
+
+export interface RaspDemoResultsResponse {
+  period_hours: number;
+  since: string;
+  total_incidents: number;
+  by_type: Record<string, number>;
+  by_severity: Record<string, number>;
+  recent_incidents: Array<{
+    id: number;
+    event_id: string;
+    detection_type: string;
+    severity: string;
+    action: string;
+    message: string;
+    occurred_at: string;
+  }>;
+}
+
+// ============================================================================
+// RASP Demo Query Keys
+// ============================================================================
+
+export const raspDemoQueryKeys = {
+  health: ["rasp-demo-health"] as const,
+  results: (hours?: number) => ["rasp-demo-results", hours ?? 1] as const,
+};
+
+// ============================================================================
+// RASP Demo Queries
+// ============================================================================
+
+/**
+ * Check RASP demo service health.
+ */
+export function useRaspDemoHealth() {
+  return useQuery({
+    queryKey: raspDemoQueryKeys.health,
+    queryFn: () => apiFetch<RaspDemoHealthResponse>("/rasp/demo/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch RASP demo test results.
+ */
+export function useRaspDemoResults(hours = 1) {
+  return useQuery({
+    queryKey: raspDemoQueryKeys.results(hours),
+    queryFn: () =>
+      apiFetch<RaspDemoResultsResponse>(`/rasp/demo/results?hours=${hours}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+// ============================================================================
+// RASP Demo Mutations
+// ============================================================================
+
+/**
+ * Run RASP demo tests.
+ */
+export function useRaspDemoRunTests() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (tests?: string[]) =>
+      apiFetch<RaspDemoRunTestsResponse>("/rasp/demo/run-tests", {
+        method: "POST",
+        body: JSON.stringify({ tests }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: raspDemoQueryKeys.results() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.incidents() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.alerts() });
+    },
+  });
+}
+
+/**
+ * Simulate a single attack.
+ */
+export function useRaspDemoSimulate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { attack_type: string; payload?: string }) =>
+      apiFetch<RaspDemoSimulateResponse>("/rasp/demo/simulate", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: raspDemoQueryKeys.results() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.incidents() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.alerts() });
+    },
+  });
+}
+
+/**
+ * Clear RASP demo data.
+ */
+export function useRaspDemoClear() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ status: string; message: string; deleted_count: number }>(
+        "/rasp/demo/clear",
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: raspDemoQueryKeys.results() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.incidents() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.alerts() });
+    },
+  });
+}
+
+// ============================================================================
+// RASP Test Run Types (Project-scoped with history and reports)
+// ============================================================================
+
+export interface RaspTestRunPayload {
+  payload: string;
+  detected: boolean;
+  incident_id: number;
+  trace_id: string;
+  external_reported: boolean;
+}
+
+export interface RaspTestRunResult {
+  test_type: string;
+  name: string;
+  description: string;
+  severity: string;
+  total_payloads: number;
+  detected: number;
+  detection_rate: number;
+  payloads: RaspTestRunPayload[];
+}
+
+export interface RaspTestRunSummary {
+  total_tests: number;
+  total_detected: number;
+  detection_rate: number;
+  by_severity: Record<string, number>;
+  by_type: Record<string, { detected: number; total: number; rate: number }>;
+  rasp_mode: string;
+}
+
+export interface RaspTestRun {
+  id: number;
+  user_id: number;
+  project_id: number;
+  name: string;
+  status: "pending" | "running" | "completed" | "failed";
+  test_types: string[];
+  results: RaspTestRunResult[] | null;
+  summary: RaspTestRunSummary | null;
+  total_tests: number;
+  total_detected: number;
+  detection_rate: number;
+  report_path: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RaspTestRunsResponse {
+  data: RaspTestRun[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface RaspTestRunStatsResponse {
+  total_runs: number;
+  completed_runs: number;
+  average_detection_rate: number;
+  recent_runs: Array<{
+    id: number;
+    name: string;
+    status: string;
+    detection_rate: number;
+    created_at: string;
+  }>;
+}
+
+// ============================================================================
+// RASP Test Run Query Keys
+// ============================================================================
+
+export const raspTestRunQueryKeys = {
+  all: (projectId: number) => ["rasp-test-runs", projectId] as const,
+  list: (projectId: number, page?: number) =>
+    ["rasp-test-runs", projectId, "list", page ?? 1] as const,
+  detail: (projectId: number, runId: number) =>
+    ["rasp-test-runs", projectId, "detail", runId] as const,
+  stats: (projectId: number) => ["rasp-test-runs", projectId, "stats"] as const,
+};
+
+// ============================================================================
+// RASP Test Run Queries
+// ============================================================================
+
+/**
+ * Fetch list of RASP test runs for a project.
+ */
+export function useRaspTestRuns(projectId: number, page = 1, perPage = 20) {
+  return useQuery({
+    queryKey: raspTestRunQueryKeys.list(projectId, page),
+    queryFn: () =>
+      apiFetch<RaspTestRunsResponse>(
+        `/projects/${projectId}/rasp/runs?page=${page}&per_page=${perPage}`
+      ),
+    enabled: !!projectId,
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+/**
+ * Fetch a single RASP test run.
+ */
+export function useRaspTestRun(projectId: number, runId: number) {
+  return useQuery({
+    queryKey: raspTestRunQueryKeys.detail(projectId, runId),
+    queryFn: () =>
+      apiFetch<{
+        run: RaspTestRun;
+        has_report: boolean;
+        duration: string | null;
+      }>(`/projects/${projectId}/rasp/runs/${runId}`),
+    enabled: !!projectId && !!runId,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Fetch RASP test run statistics for a project.
+ */
+export function useRaspTestRunStats(projectId: number) {
+  return useQuery({
+    queryKey: raspTestRunQueryKeys.stats(projectId),
+    queryFn: () =>
+      apiFetch<RaspTestRunStatsResponse>(
+        `/projects/${projectId}/rasp/runs/stats`
+      ),
+    enabled: !!projectId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+// ============================================================================
+// RASP Test Run Mutations
+// ============================================================================
+
+/**
+ * Create and execute a new RASP test run.
+ */
+export function useCreateRaspTestRun(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { name?: string; test_types?: string[] }) =>
+      apiFetch<{ message: string; run: RaspTestRun }>(
+        `/projects/${projectId}/rasp/runs`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: raspTestRunQueryKeys.all(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: raspTestRunQueryKeys.stats(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.incidents() });
+      queryClient.invalidateQueries({ queryKey: raspQueryKeys.stats() });
+    },
+  });
+}
+
+/**
+ * Delete a RASP test run.
+ */
+export function useDeleteRaspTestRun(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (runId: number) =>
+      apiFetch<{ message: string }>(
+        `/projects/${projectId}/rasp/runs/${runId}`,
+        {
+          method: "DELETE",
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: raspTestRunQueryKeys.all(projectId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: raspTestRunQueryKeys.stats(projectId),
+      });
+    },
+  });
+}
+
+/**
+ * Get report download URL for a RASP test run.
+ */
+export function getRaspTestRunReportUrl(
+  projectId: number,
+  runId: number
+): string {
+  return `/api/projects/${projectId}/rasp/runs/${runId}/report`;
+}
+
+/**
+ * Get report view URL for a RASP test run.
+ */
+export function getRaspTestRunReportViewUrl(
+  projectId: number,
+  runId: number
+): string {
+  return `/api/projects/${projectId}/rasp/runs/${runId}/report/view`;
 }
