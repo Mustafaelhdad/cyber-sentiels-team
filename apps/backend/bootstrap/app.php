@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
       \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
       \Illuminate\Session\Middleware\StartSession::class,
       \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+      \App\Http\Middleware\RaspMiddleware::class,
     ]);
 
     $middleware->alias([

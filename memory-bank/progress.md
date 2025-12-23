@@ -68,9 +68,32 @@
   - `docker-compose.yml`: `sentinel_waf_flask` service + `waf_shared` volume
   - `infra/docker/nginx/default.conf`: `/waf-flask/` routing to Flask WAF
   - Documentation: `docs/WAF_PROXY.md`
+- **In-App RASP (Runtime Application Self-Protection):**
+  - `config/rasp.php`: Full configuration with env overrides
+    - Mode: monitor/block toggle
+    - Sinks: database, http, filesystem toggles
+    - Rate limits, detection patterns, redaction settings
+    - Queue and logging configuration
+  - `app/Rasp/RaspEvent.php`: Event DTO with factory methods
+  - `app/Rasp/RaspContext.php`: Request context singleton
+  - `app/Rasp/RaspService.php`: Detection and emission service
+  - `app/Rasp/RaspFilesystem.php`: Filesystem wrapper with path traversal detection
+  - `app/Rasp/Exceptions/RaspBlockedException.php`: Block exception
+  - `app/Http/Middleware/RaspMiddleware.php`: Request context capture
+  - `app/Providers/RaspServiceProvider.php`: DB/HTTP sink hooks
+  - `app/Jobs/AnalyzeRaspEventJob.php`: Async event analyzer
+  - `app/Models/RaspIncident.php`: Incident persistence model
+  - `app/Http/Controllers/RaspIncidentController.php`: API endpoints
+  - Migration: `rasp_incidents` table with full indexing
+  - API routes: `/api/rasp/incidents`, `/api/rasp/stats`, `/api/rasp/alerts`, etc.
+  - Logging: Dedicated `rasp` channel in `config/logging.php`
 
 ## Next Milestones
 
+- Run `php artisan migrate` to create `rasp_incidents` table
+- Test RASP monitoring by making API requests and checking logs
+- Enable RASP blocking mode (`RASP_MODE=block`) for high-confidence detections
+- Build frontend RASP dashboard (incidents list, stats, alerts)
 - Build and test Flask WAF container locally
 - Update Laravel backend `WafProxyService` to write JSON map format
 - Test WAF proxy flow end-to-end (create proxy, send traffic, view logs)

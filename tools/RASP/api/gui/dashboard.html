@@ -37,7 +37,7 @@
   <script>
     async function loadEvents() {
       try {
-        const res = await fetch('http://127.0.0.1:9000/rasp/incidents');
+        const res = await fetch('/rasp/incidents');
         if (!res.ok) throw new Error('Failed to load data');
         const incidents = await res.json();
         const tbody = document.querySelector('#events-table tbody');

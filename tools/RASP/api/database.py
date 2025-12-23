@@ -8,9 +8,13 @@ from typing import List, Dict, Any
 from datetime import datetime
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "rasp_incidents.db")
+DB_PATH = os.environ.get(
+    "RASP_DB_PATH",
+    os.path.join(os.path.dirname(__file__), "rasp_incidents.db"),
+)
 
 def init_db() -> None:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON;")
         cur = conn.cursor()

@@ -1,14 +1,18 @@
 # api/api.py
 from flask import Flask, request, jsonify, render_template
-from datetime import datetime
 import sqlite3
 import os
 from flask_cors import CORS
+from . import database
 
 app = Flask(__name__, template_folder="gui")
 CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "rasp_incidents.db")
+DB_PATH = database.DB_PATH
+HOST = os.environ.get("RASP_HOST", "0.0.0.0")
+PORT = int(os.environ.get("RASP_PORT", 9000))
+
+database.init_db()
 
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
@@ -36,24 +40,7 @@ def index():
 def rasp_notify():
     try:
         data = request.get_json(force=True)
-        with sqlite3.connect(DB_PATH) as conn:
-            c = conn.cursor()
-            c.execute("""
-                INSERT OR REPLACE INTO incidents
-                (id, agent, ts, path, source, param, value_snippet, finding_type, occurrence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                data.get("id"),
-                data.get("agent"),
-                data.get("ts", int(datetime.now().timestamp())),
-                data.get("path"),
-                data.get("source"),
-                data.get("param"),
-                data.get("value_snippet"),
-                data.get("finding_type"),
-                data.get("occurrence", 1)
-            ))
-            conn.commit()
+        database.insert_incident(data)
         return jsonify({"status": "received"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -61,21 +48,26 @@ def rasp_notify():
 @app.route("/rasp/incidents", methods=["GET"])
 def get_incidents():
     try:
-        with sqlite3.connect(DB_PATH) as conn:
-            c = conn.cursor()
-            c.execute("SELECT * FROM incidents ORDER BY ts DESC")
-            data = c.fetchall()
-
-        keys = ["id","agent","ts","path","source","param","value_snippet","finding_type","occurrence"]
-        incidents = []
-        for row in data:
-            record = dict(zip(keys, row))
-            record["timestamp_readable"] = datetime.fromtimestamp(record["ts"]).strftime("%Y-%m-%d %H:%M:%S")
-            incidents.append(record)
+        limit = int(request.args.get("limit", 100))
+        incidents = database.query_recent(limit=limit)
         return jsonify(incidents)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/health", methods=["GET"])
+def health():
+    try:
+        database.init_db()
+        with sqlite3.connect(DB_PATH) as conn:
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM incidents")
+            count_row = c.fetchone()
+            count = count_row[0] if count_row else 0
+        return jsonify({"status": "ok", "db_path": DB_PATH, "incidents": count}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 if __name__ == "__main__":
-    init_db()
-    app.run(port=9000, debug=True)
+    app.run(host=HOST, port=PORT, debug=False)

@@ -980,3 +980,199 @@ export function useStartSastScan(projectId: string | number) {
     },
   });
 }
+
+// ============================================================================
+// RASP Types
+// ============================================================================
+
+export interface RaspIncident {
+  id: number;
+  event_id: string;
+  trace_id: string;
+  sink: "request" | "database" | "http" | "filesystem" | "behavior";
+  severity: "debug" | "info" | "warning" | "error" | "critical";
+  detection_type: string | null;
+  action: "allow" | "monitor" | "block";
+  message: string;
+  request_method: string | null;
+  request_path: string | null;
+  request_ip: string | null;
+  user_agent: string | null;
+  session_id: string | null;
+  user_id: number | null;
+  user_email: string | null;
+  request_context: Record<string, unknown> | null;
+  identity_context: Record<string, unknown> | null;
+  sink_data: Record<string, unknown> | null;
+  meta: Record<string, unknown> | null;
+  occurred_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RaspStats {
+  period_hours: number;
+  since: string;
+  totals: {
+    total: number;
+    blocked: number;
+    monitored: number;
+    high_severity: number;
+  };
+  by_severity: Record<string, number>;
+  by_sink: Record<string, number>;
+  by_detection: Record<string, number>;
+  by_action: Record<string, number>;
+  top_ips: Record<string, number>;
+  hourly_trend: Record<string, number>;
+}
+
+export interface RaspDetections {
+  period_hours: number;
+  detections: Record<
+    string,
+    { total: number; blocked: number; monitored: number }
+  >;
+}
+
+// RASP API Responses
+interface RaspIncidentsResponse {
+  data: RaspIncident[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+interface RaspStatsResponse extends RaspStats {}
+
+interface RaspDetectionsResponse extends RaspDetections {}
+
+interface RaspAlertsResponse {
+  data: RaspIncident[];
+  count: number;
+}
+
+interface RaspTraceResponse {
+  data: RaspIncident[];
+  trace_id: string;
+  count: number;
+}
+
+// ============================================================================
+// RASP Query Keys
+// ============================================================================
+
+// Add to queryKeys object - we'll define them here for RASP
+export const raspQueryKeys = {
+  incidents: (filters?: Record<string, string | number | boolean>) =>
+    ["rasp-incidents", filters ?? {}] as const,
+  incident: (id: number) => ["rasp-incident", id] as const,
+  stats: (hours?: number) => ["rasp-stats", hours ?? 24] as const,
+  detections: (hours?: number) => ["rasp-detections", hours ?? 24] as const,
+  alerts: (limit?: number) => ["rasp-alerts", limit ?? 20] as const,
+  trace: (traceId: string) => ["rasp-trace", traceId] as const,
+};
+
+// ============================================================================
+// RASP Queries
+// ============================================================================
+
+/**
+ * Fetch RASP incidents with optional filtering.
+ */
+export function useRaspIncidents(filters?: {
+  severity?: string;
+  sink?: string;
+  detection_type?: string;
+  action?: string;
+  ip?: string;
+  user_id?: number;
+  from?: string;
+  to?: string;
+  high_severity?: boolean;
+  blocked?: boolean;
+  per_page?: number;
+  page?: number;
+}) {
+  return useQuery({
+    queryKey: raspQueryKeys.incidents(filters),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, String(value));
+          }
+        });
+      }
+      const queryString = params.toString();
+      return apiFetch<RaspIncidentsResponse>(
+        `/rasp/incidents${queryString ? `?${queryString}` : ""}`
+      );
+    },
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch a single RASP incident.
+ */
+export function useRaspIncident(id: number | undefined) {
+  return useQuery({
+    queryKey: raspQueryKeys.incident(id ?? 0),
+    queryFn: () => apiFetch<{ data: RaspIncident }>(`/rasp/incidents/${id}`),
+    enabled: !!id,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+/**
+ * Fetch RASP statistics.
+ */
+export function useRaspStats(hours = 24) {
+  return useQuery({
+    queryKey: raspQueryKeys.stats(hours),
+    queryFn: () => apiFetch<RaspStatsResponse>(`/rasp/stats?hours=${hours}`),
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+/**
+ * Fetch RASP detection type breakdown.
+ */
+export function useRaspDetections(hours = 24) {
+  return useQuery({
+    queryKey: raspQueryKeys.detections(hours),
+    queryFn: () =>
+      apiFetch<RaspDetectionsResponse>(`/rasp/detections?hours=${hours}`),
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+/**
+ * Fetch recent high-severity/blocked incidents (alerts).
+ */
+export function useRaspAlerts(limit = 20) {
+  return useQuery({
+    queryKey: raspQueryKeys.alerts(limit),
+    queryFn: () => apiFetch<RaspAlertsResponse>(`/rasp/alerts?limit=${limit}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch all incidents for a specific trace (request).
+ */
+export function useRaspTrace(traceId: string | undefined) {
+  return useQuery({
+    queryKey: raspQueryKeys.trace(traceId ?? ""),
+    queryFn: () => apiFetch<RaspTraceResponse>(`/rasp/traces/${traceId}`),
+    enabled: !!traceId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}

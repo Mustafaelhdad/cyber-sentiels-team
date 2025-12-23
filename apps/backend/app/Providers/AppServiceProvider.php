@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Rasp\RaspService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,6 +14,9 @@ class AppServiceProvider extends ServiceProvider
   {
     // Bind Services
     $this->app->singleton(\App\Services\ZapService::class);
+
+    // Register RASP Service as singleton
+    $this->app->singleton(RaspService::class);
   }
 
   /**
@@ -23,4 +27,3 @@ class AppServiceProvider extends ServiceProvider
     //
   }
 }
-

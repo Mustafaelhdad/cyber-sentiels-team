@@ -90,6 +90,8 @@ services:
       - WAF_MAP_FILE_PATH=/shared/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - ZAP_API_URL=http://zap:8080
+      - SAST_API_URL=http://sast:8080
+      - RASP_API_URL=http://rasp:9000
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
@@ -129,7 +131,11 @@ services:
       - QUEUE_CONNECTION=redis
       - WAF_MAP_FILE_PATH=/shared/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
+      - SAST_API_URL=http://sast:8080
+      - RASP_API_URL=http://rasp:9000
       - ZAP_API_URL=http://zap:8080
+      - SAST_API_URL=http://sast:8080
+      - RASP_API_URL=http://rasp:9000
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
@@ -238,6 +244,31 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # ===================
+  # RASP (Runtime App Self-Protection)
+  # ===================
+  rasp:
+    build:
+      context: ./tools/RASP
+      dockerfile: Dockerfile
+    container_name: sentinel_rasp
+    environment:
+      - RASP_PORT=9000
+      - RASP_HOST=0.0.0.0
+      - RASP_DB_PATH=/data/rasp_incidents.db
+      - RASP_ENABLE_DEMO=${RASP_ENABLE_DEMO:-false}
+    volumes:
+      - rasp_data:/data
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
     # ===================
   # SAST Scanner
   # ===================
@@ -289,4 +320,6 @@ volumes:
   sast_output:
     driver: local
   sast_scans:
+    driver: local
+  rasp_data:
     driver: local

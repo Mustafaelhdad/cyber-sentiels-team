@@ -88,7 +88,23 @@ return [
       'path' => storage_path('logs/laravel.log'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | RASP Log Channel
+    |--------------------------------------------------------------------------
+    |
+    | Dedicated channel for RASP (Runtime Application Self-Protection) events.
+    | Uses JSON formatter for structured logging and easy parsing.
+    |
+    */
+    'rasp' => [
+      'driver' => 'daily',
+      'path' => storage_path('logs/rasp.log'),
+      'level' => env('RASP_LOG_LEVEL', 'info'),
+      'days' => env('RASP_RETENTION_DAYS', 30),
+      'replace_placeholders' => true,
+    ],
+
   ],
 
 ];
-

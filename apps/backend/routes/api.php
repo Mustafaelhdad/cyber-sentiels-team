@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\RunStreamController;
 use App\Http\Controllers\Api\SastController;
 use App\Http\Controllers\Api\WafProxyController;
 use App\Http\Controllers\Api\WafLogController;
+use App\Http\Controllers\RaspIncidentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -100,5 +101,15 @@ Route::middleware('auth:sanctum')->group(function () {
       Route::get('/runs/{run}/download-html', [SastController::class, 'downloadHtmlReport']);
       Route::get('/runs/{run}/download-pdf', [SastController::class, 'downloadPdfReport']);
     });
+  });
+
+  // RASP routes (global, not project-scoped)
+  Route::prefix('rasp')->group(function () {
+    Route::get('/incidents', [RaspIncidentController::class, 'index']);
+    Route::get('/incidents/{id}', [RaspIncidentController::class, 'show']);
+    Route::get('/traces/{traceId}', [RaspIncidentController::class, 'trace']);
+    Route::get('/stats', [RaspIncidentController::class, 'stats']);
+    Route::get('/detections', [RaspIncidentController::class, 'detections']);
+    Route::get('/alerts', [RaspIncidentController::class, 'alerts']);
   });
 });
