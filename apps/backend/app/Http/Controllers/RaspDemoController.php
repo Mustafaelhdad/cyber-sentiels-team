@@ -148,10 +148,12 @@ class RaspDemoController extends Controller
             foreach ($test['payloads'] as $payload) {
                 $totalTests++;
                 $traceId = Str::uuid()->toString();
+                $eventId = Str::uuid()->toString();
+                $externalEventId = "demo-{$testType}-" . time() . '-' . Str::random(4);
                 
                 // Create a simulated RASP incident for demonstration
                 $incident = [
-                    'id' => "demo-{$testType}-" . time() . '-' . Str::random(4),
+                    'id' => $externalEventId,
                     'agent' => 'sentinel-demo',
                     'ts' => time(),
                     'path' => '/demo/test',
@@ -174,7 +176,7 @@ class RaspDemoController extends Controller
 
                 // Also create in-app RASP incident for the dashboard
                 $raspIncident = RaspIncident::create([
-                    'event_id' => $incident['id'],
+                    'event_id' => $eventId,
                     'trace_id' => $traceId,
                     'sink' => 'request',
                     'severity' => $test['severity'] === 'critical' ? 'critical' : 'error',
@@ -193,6 +195,7 @@ class RaspDemoController extends Controller
                     'meta' => [
                         'demo_test' => true,
                         'external_reported' => $externalDetected,
+                        'external_event_id' => $externalEventId,
                     ],
                     'occurred_at' => now(),
                 ]);
@@ -261,6 +264,8 @@ class RaspDemoController extends Controller
 
         $payload = $customPayload ?? $defaultPayloads[$attackType];
         $traceId = Str::uuid()->toString();
+        $eventId = Str::uuid()->toString();
+        $externalEventId = "demo-sim-{$attackType}-" . time() . '-' . Str::random(4);
 
         $attackNames = [
             'xss' => 'Cross-Site Scripting (XSS)',
@@ -280,7 +285,7 @@ class RaspDemoController extends Controller
 
         // Create RASP incident
         $incident = RaspIncident::create([
-            'event_id' => "demo-sim-{$attackType}-" . time() . '-' . Str::random(4),
+            'event_id' => $eventId,
             'trace_id' => $traceId,
             'sink' => 'request',
             'severity' => $severities[$attackType],
@@ -298,6 +303,7 @@ class RaspDemoController extends Controller
             ],
             'meta' => [
                 'demo_simulation' => true,
+                'external_event_id' => $externalEventId,
             ],
             'occurred_at' => now(),
         ]);
@@ -308,7 +314,7 @@ class RaspDemoController extends Controller
         
         try {
             $response = Http::timeout(3)->post("{$raspApiUrl}/rasp/notify", [
-                'id' => $incident->event_id,
+                'id' => $externalEventId,
                 'agent' => 'sentinel-demo',
                 'ts' => time(),
                 'path' => '/demo/simulate',

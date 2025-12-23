@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useRaspStats,
@@ -11,9 +11,15 @@ import { RaspIncidentsList } from "./RaspIncidentsList";
 import { RaspAlertsBanner } from "./RaspAlertsBanner";
 import { RaspModeIndicator } from "./RaspModeIndicator";
 import { RaspDemoPanel } from "./RaspDemoPanel";
+import {
+  buildDemoIncidents,
+  buildDemoStats,
+  loadRaspDemoRuns,
+} from "./raspDemoStorage";
 
 interface Props {
   projectName: string;
+  projectId: number;
 }
 
 type FilterSeverity = "" | "debug" | "info" | "warning" | "error" | "critical";
@@ -28,7 +34,7 @@ type FilterSink =
 
 type TabType = "dashboard" | "demo";
 
-export function RaspDashboard({ projectName }: Props) {
+export function RaspDashboard({ projectName, projectId }: Props) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>("demo");
   const [filterSeverity, setFilterSeverity] = useState<FilterSeverity>("");
@@ -40,16 +46,19 @@ export function RaspDashboard({ projectName }: Props) {
   const {
     data: statsData,
     isLoading: statsLoading,
+    isError: statsError,
     refetch: refetchStats,
   } = useRaspStats(24);
   const {
     data: alertsData,
     isLoading: alertsLoading,
+    isError: alertsError,
     refetch: refetchAlerts,
   } = useRaspAlerts(10);
   const {
     data: incidentsData,
     isLoading: incidentsLoading,
+    isError: incidentsError,
     refetch: refetchIncidents,
   } = useRaspIncidents({
     severity: filterSeverity || undefined,
@@ -58,8 +67,37 @@ export function RaspDashboard({ projectName }: Props) {
     per_page: 50,
   });
 
-  const incidents = incidentsData?.data ?? [];
-  const alerts = alertsData?.data ?? [];
+  const demoRuns = useMemo(
+    () => loadRaspDemoRuns(projectId),
+    [activeTab, projectId]
+  );
+  const demoIncidents = useMemo(
+    () => buildDemoIncidents(demoRuns),
+    [demoRuns]
+  );
+  const demoStats = useMemo(() => buildDemoStats(demoRuns, 24), [demoRuns]);
+  const filteredDemoIncidents = useMemo(() => {
+    return demoIncidents.filter((incident) => {
+      if (filterSeverity && incident.severity !== filterSeverity) return false;
+      if (filterAction && incident.action !== filterAction) return false;
+      if (filterSink && incident.sink !== filterSink) return false;
+      return true;
+    });
+  }, [demoIncidents, filterSeverity, filterAction, filterSink]);
+
+  const hasApiError = statsError || alertsError || incidentsError;
+  const backendEmpty =
+    !statsLoading &&
+    !incidentsLoading &&
+    statsData?.totals?.total === 0 &&
+    (incidentsData?.data?.length ?? 0) === 0;
+  const useDemoFallback = demoRuns.length > 0 && (hasApiError || backendEmpty);
+
+  const incidents = useDemoFallback
+    ? filteredDemoIncidents
+    : incidentsData?.data ?? [];
+  const alerts = useDemoFallback ? demoIncidents : alertsData?.data ?? [];
+  const stats = useDemoFallback ? demoStats : statsData;
 
   const handleDemoTestComplete = () => {
     // Refetch stats and incidents when demo tests complete
@@ -92,7 +130,10 @@ export function RaspDashboard({ projectName }: Props) {
         </div>
 
         {/* Alerts banner */}
-        <RaspAlertsBanner alerts={alerts} isLoading={alertsLoading} />
+        <RaspAlertsBanner
+          alerts={alerts}
+          isLoading={useDemoFallback ? false : alertsLoading}
+        />
       </div>
 
       {/* Tab Navigation */}
@@ -165,14 +206,20 @@ export function RaspDashboard({ projectName }: Props) {
 
       {/* Demo Tab Content */}
       {activeTab === "demo" && (
-        <RaspDemoPanel onTestComplete={handleDemoTestComplete} />
+        <RaspDemoPanel
+          projectId={projectId}
+          onTestComplete={handleDemoTestComplete}
+        />
       )}
 
       {/* Dashboard Tab Content */}
       {activeTab === "dashboard" && (
         <>
           {/* Stats */}
-          <RaspStatsCard stats={statsData} isLoading={statsLoading} />
+          <RaspStatsCard
+            stats={stats}
+            isLoading={useDemoFallback ? false : statsLoading}
+          />
 
           {/* Incidents list with filters */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -227,7 +274,40 @@ export function RaspDashboard({ projectName }: Props) {
             </div>
 
             {/* Show message when no incidents and not loading - likely backend is offline */}
-            {!incidentsLoading && incidents.length === 0 && !statsData && (
+            {useDemoFallback && (
+              <div className="mb-4 p-4 rounded-xl bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-5 w-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div>
+                    <h4 className="text-sm font-medium text-sky-800 dark:text-sky-200">
+                      Showing Demo Results
+                    </h4>
+                    <p className="text-sm text-sky-700 dark:text-sky-300 mt-1">
+                      These metrics come from your local demo test runs. Start
+                      the backend services to see live incident data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!useDemoFallback &&
+              !incidentsLoading &&
+              incidents.length === 0 &&
+              !statsData &&
+              hasApiError && (
               <div className="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                 <div className="flex items-start gap-3">
                   <svg
@@ -267,7 +347,7 @@ export function RaspDashboard({ projectName }: Props) {
 
             <RaspIncidentsList
               incidents={incidents}
-              isLoading={incidentsLoading}
+              isLoading={useDemoFallback ? false : incidentsLoading}
               onViewTrace={setSelectedTraceId}
             />
 

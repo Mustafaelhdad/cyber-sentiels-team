@@ -23,6 +23,10 @@ class ForceJsonResponse
    */
   public function handle(Request $request, Closure $next): Response
   {
+    if ($this->allowsHtmlResponse($request)) {
+      return $next($request);
+    }
+
     // Force the Accept header to application/json for API requests
     $request->headers->set('Accept', 'application/json');
 
@@ -73,6 +77,21 @@ class ForceJsonResponse
       str_contains($content, '<br') ||
       str_contains($content, '<b>') ||
       str_contains($content, '</html>');
+  }
+
+  private function allowsHtmlResponse(Request $request): bool
+  {
+    if ($request->query('format') === 'html') {
+      return true;
+    }
+
+    return $request->is(
+      'api/projects/*/rasp/runs/*/report',
+      'api/projects/*/rasp/runs/*/report/view',
+      'api/projects/*/runs/*/report',
+      'api/projects/*/runs/*/tasks/*/download-html',
+      'api/projects/*/sast/runs/*/download-html'
+    );
   }
 
   /**

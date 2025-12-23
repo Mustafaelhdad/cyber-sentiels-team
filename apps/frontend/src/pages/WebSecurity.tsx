@@ -458,7 +458,10 @@ export default function WebSecurity() {
       {/* RASP Tab Content */}
       {activeTab === "rasp" && (
         <div className="space-y-6">
-          <RaspDashboard projectName={currentProject.name} />
+          <RaspDashboard
+            projectId={currentProject.id}
+            projectName={currentProject.name}
+          />
         </div>
       )}
     </div>

@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   useRaspDemoHealth,
   useRaspTestRuns,
@@ -10,8 +9,14 @@ import {
   type RaspTestRun,
   type RaspTestRunResult,
 } from "@/hooks/useApiQueries";
+import {
+  loadRaspDemoRuns,
+  saveRaspDemoRuns,
+  type RaspDemoRun,
+} from "./raspDemoStorage";
 
 interface Props {
+  projectId: number;
   onTestComplete?: () => void;
 }
 
@@ -69,29 +74,8 @@ const attackTypeInfo: Record<
   },
 };
 
-// Mock run type for local demo
-interface MockRun {
-  id: number;
-  name: string;
-  status: "completed";
-  test_types: string[];
-  results: RaspTestRunResult[];
-  summary: {
-    total_tests: number;
-    total_detected: number;
-    detection_rate: number;
-    rasp_mode: string;
-  };
-  total_tests: number;
-  total_detected: number;
-  detection_rate: number;
-  created_at: string;
-  finished_at: string;
-}
-
-export function RaspDemoPanel({ onTestComplete }: Props) {
-  const { projectId } = useParams<{ projectId: string }>();
-  const numericProjectId = projectId ? parseInt(projectId, 10) : 0;
+export function RaspDemoPanel({ projectId, onTestComplete }: Props) {
+  const numericProjectId = Number.isFinite(projectId) ? projectId : 0;
 
   const [selectedTests, setSelectedTests] = useState<AttackType[]>([
     "xss",
@@ -105,7 +89,7 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
   const [expandedRunId, setExpandedRunId] = useState<number | null>(null);
 
   // Local mock state for when backend is offline
-  const [mockRuns, setMockRuns] = useState<MockRun[]>([]);
+  const [mockRuns, setMockRuns] = useState<RaspDemoRun[]>([]);
   const [isRunningMock, setIsRunningMock] = useState(false);
 
   // Queries
@@ -137,6 +121,12 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
     if (healthData.status !== "online") return true;
     return false;
   }, [numericProjectId, healthData, healthLoading, healthError]);
+
+  useEffect(() => {
+    if (isOfflineMode) {
+      setMockRuns(loadRaspDemoRuns(numericProjectId));
+    }
+  }, [isOfflineMode, numericProjectId]);
 
   // Generate mock test results
   const generateMockResults = useCallback(
@@ -176,7 +166,7 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
     const totalTests = results.reduce((acc, r) => acc + r.total_payloads, 0);
     const totalDetected = results.reduce((acc, r) => acc + r.detected, 0);
 
-    const mockRun: MockRun = {
+    const mockRun: RaspDemoRun = {
       id: Date.now(),
       name: runName || `RASP Test Run ${new Date().toLocaleString()}`,
       status: "completed",
@@ -195,13 +185,23 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
       finished_at: new Date().toISOString(),
     };
 
-    setMockRuns((prev) => [mockRun, ...prev]);
+    setMockRuns((prev) => {
+      const nextRuns = [mockRun, ...prev];
+      saveRaspDemoRuns(numericProjectId, nextRuns);
+      return nextRuns;
+    });
     setIsRunningMock(false);
     setRunName("");
     setActiveTab("history");
     setExpandedRunId(mockRun.id);
     onTestComplete?.();
-  }, [selectedTests, runName, generateMockResults, onTestComplete]);
+  }, [
+    selectedTests,
+    runName,
+    generateMockResults,
+    numericProjectId,
+    onTestComplete,
+  ]);
 
   const handleRunTests = async () => {
     if (isOfflineMode) {
@@ -227,7 +227,11 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
 
   const handleDeleteRun = async (runId: number) => {
     if (isOfflineMode) {
-      setMockRuns((prev) => prev.filter((r) => r.id !== runId));
+      setMockRuns((prev) => {
+        const nextRuns = prev.filter((r) => r.id !== runId);
+        saveRaspDemoRuns(numericProjectId, nextRuns);
+        return nextRuns;
+      });
     } else {
       try {
         await deleteRunMutation.mutateAsync(runId);
@@ -239,10 +243,10 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
     }
   };
 
-  const handleDownloadReport = (run: RaspTestRun | MockRun) => {
+  const handleDownloadReport = (run: RaspTestRun | RaspDemoRun) => {
     if (isOfflineMode || !("report_path" in run)) {
       // Generate and download mock HTML report
-      const html = generateMockHtmlReport(run as MockRun);
+      const html = generateMockHtmlReport(run as RaspDemoRun);
       const blob = new Blob([html], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -260,7 +264,7 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
     }
   };
 
-  const generateMockHtmlReport = (run: MockRun): string => {
+  const generateMockHtmlReport = (run: RaspDemoRun): string => {
     const results = run.results || [];
     const summary = run.summary || {
       total_tests: 0,
@@ -512,7 +516,7 @@ export function RaspDemoPanel({ onTestComplete }: Props) {
   const isRunning = createRunMutation.isPending || isRunningMock;
 
   // Combine real runs with mock runs for display
-  const allRuns: (RaspTestRun | MockRun)[] = isOfflineMode
+  const allRuns: (RaspTestRun | RaspDemoRun)[] = isOfflineMode
     ? mockRuns
     : runsData?.data || [];
 

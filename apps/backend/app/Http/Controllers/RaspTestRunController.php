@@ -73,6 +73,13 @@ class RaspTestRunController extends Controller
             $reportPath = $this->generateHtmlReport($run);
             $run->update(['report_path' => $reportPath]);
 
+            if ($request->query('format') === 'html') {
+                $content = Storage::disk('local')->get($reportPath);
+
+                return response($content, 201)
+                    ->header('Content-Type', 'text/html');
+            }
+
             return response()->json([
                 'message' => 'RASP test run completed successfully',
                 'run' => $run->fresh(),
@@ -229,10 +236,12 @@ class RaspTestRunController extends Controller
 
             foreach ($typeInfo['payloads'] as $payload) {
                 $traceId = Str::uuid()->toString();
+                $eventId = Str::uuid()->toString();
+                $externalEventId = "rasp-run-{$run->id}-{$testType}-" . time() . '-' . Str::random(4);
 
                 // Create incident record
                 $incident = [
-                    'id' => "rasp-run-{$run->id}-{$testType}-" . time() . '-' . Str::random(4),
+                    'id' => $externalEventId,
                     'agent' => 'sentinel-test-run',
                     'ts' => time(),
                     'path' => '/rasp/test',
@@ -255,7 +264,7 @@ class RaspTestRunController extends Controller
 
                 // Create in-app RASP incident
                 $raspIncident = RaspIncident::create([
-                    'event_id' => $incident['id'],
+                    'event_id' => $eventId,
                     'trace_id' => $traceId,
                     'sink' => 'request',
                     'severity' => $typeInfo['severity'] === 'critical' ? 'critical' : 'error',
@@ -274,6 +283,7 @@ class RaspTestRunController extends Controller
                     'meta' => [
                         'test_run_id' => $run->id,
                         'external_reported' => $externalDetected,
+                        'external_event_id' => $externalEventId,
                     ],
                     'occurred_at' => now(),
                 ]);
