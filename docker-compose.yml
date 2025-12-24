@@ -314,6 +314,20 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # ===================
+  # CERTBOT (SSL Certificate Management)
+  # ===================
+  certbot:
+    image: certbot/certbot:latest
+    container_name: sentinel_certbot
+    volumes:
+      - certbot_www:/var/www/certbot:rw
+      - certbot_certs:/etc/letsencrypt:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - sentinel_net
+    restart: unless-stopped
+
 networks:
   sentinel_net:
     driver: bridge
