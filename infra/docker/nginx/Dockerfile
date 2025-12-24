@@ -7,12 +7,15 @@ RUN apk add --no-cache curl
 # Remove default config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy both nginx configs (initial for cert issuance, default for SSL)
+# Copy initial config (HTTP only - for cert issuance)
+# The SSL config will be copied after certs are issued
 COPY default-initial.conf /etc/nginx/conf.d/default.conf
-COPY default.conf /etc/nginx/conf.d/default-ssl.conf
+
+# Store SSL config in a separate location (not in conf.d to avoid loading)
+COPY default.conf /etc/nginx/ssl-config/default-ssl.conf
 
 # Create frontend directory (will be populated by build)
-RUN mkdir -p /var/www/frontend /var/www/certbot
+RUN mkdir -p /var/www/frontend /var/www/certbot /etc/nginx/ssl-config
 
 # Copy frontend build (from build context)
 COPY frontend-dist/ /var/www/frontend/
@@ -23,7 +26,7 @@ RUN mkdir -p /etc/nginx/ssl/live/cybersentinels.cloud
 # Script to switch configs after SSL is ready
 RUN echo '#!/bin/sh' > /usr/local/bin/enable-ssl.sh && \
     echo 'if [ -f /etc/nginx/ssl/live/cybersentinels.cloud/fullchain.pem ]; then' >> /usr/local/bin/enable-ssl.sh && \
-    echo '  cp /etc/nginx/conf.d/default-ssl.conf /etc/nginx/conf.d/default.conf' >> /usr/local/bin/enable-ssl.sh && \
+    echo '  cp /etc/nginx/ssl-config/default-ssl.conf /etc/nginx/conf.d/default.conf' >> /usr/local/bin/enable-ssl.sh && \
     echo '  nginx -s reload' >> /usr/local/bin/enable-ssl.sh && \
     echo 'fi' >> /usr/local/bin/enable-ssl.sh && \
     chmod +x /usr/local/bin/enable-ssl.sh
