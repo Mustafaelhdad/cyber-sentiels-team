@@ -323,7 +323,7 @@ services:
     volumes:
       - certbot_www:/var/www/certbot:rw
       - certbot_certs:/etc/letsencrypt:rw
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; if [ ! -f /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem ]; then certbot certonly --webroot -w /var/www/certbot -d cybersentinels.cloud -d www.cybersentinels.cloud --email admin@cybersentinels.cloud --agree-tos --no-eff-email --non-interactive; fi; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - sentinel_net
     restart: unless-stopped
