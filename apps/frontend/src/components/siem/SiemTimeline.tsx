@@ -55,5 +55,32 @@ export function SiemTimeline({ data, isLoading }: Props) {
     });
   };
 
-  return <div className=""></div>;
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        Alert Timeline
+      </h3>
+      <div className="space-y-2">
+        {data.slice(-10).map((point, index) => {
+          const barWidth = (point.total / maxValue) * 100;
+          return (
+            <div key={index} className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">
+                {formatTime(point.timestamp)}
+              </span>
+              <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300"
+                  style={{ width: `${barWidth}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-8 text-right">
+                {point.total}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
