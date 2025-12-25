@@ -3,11 +3,13 @@ import { Outlet, Link } from "react-router-dom";
 const highlights = [
   {
     title: "Project-aware workflows",
-    description: "Stay aligned with the project you're securing while you switch contexts.",
+    description:
+      "Stay aligned with the project you're securing while you switch contexts.",
   },
   {
     title: "Security automation",
-    description: "Schedule scans and monitoring with guardrails built for teams.",
+    description:
+      "Schedule scans and monitoring with guardrails built for teams.",
   },
   {
     title: "Role-based controls",
@@ -40,8 +42,8 @@ export default function AuthLayout() {
                 Secure every deployment with confidence
               </h2>
               <p className="text-base text-indigo-100/90">
-                Coordinate testing, monitoring, and IAM from one place. Keep projects moving while
-                the right safeguards stay in place.
+                Coordinate testing, monitoring, and IAM from one place. Keep
+                projects moving while the right safeguards stay in place.
               </p>
             </div>
 
@@ -54,14 +56,12 @@ export default function AuthLayout() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-indigo-50/90">
                     {item.title}
                   </p>
-                  <p className="mt-2 text-sm text-indigo-50/85">{item.description}</p>
+                  <p className="mt-2 text-sm text-indigo-50/85">
+                    {item.description}
+                  </p>
                 </div>
               ))}
             </div>
-
-            <p className="mt-auto pt-12 text-sm text-indigo-100/80">
-              Purpose-built for teams that ship securely.
-            </p>
           </div>
         </div>
 
