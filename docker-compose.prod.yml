@@ -92,7 +92,7 @@ services:
       - ZAP_API_URL=http://zap:8080
       - SAST_API_URL=http://sast:8080
       - RASP_API_URL=http://rasp:9000
-      - RASP_ENABLED=${RASP_ENABLED:false}
+      - RASP_ENABLED=${RASP_ENABLED:-false}
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
@@ -137,7 +137,7 @@ services:
       - ZAP_API_URL=http://zap:8080
       - SAST_API_URL=http://sast:8080
       - RASP_API_URL=http://rasp:9000
-      - RASP_ENABLED=${RASP_ENABLED:false}
+      - RASP_ENABLED=${RASP_ENABLED:-false}
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports

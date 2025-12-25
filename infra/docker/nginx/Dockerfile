@@ -8,7 +8,6 @@ RUN apk add --no-cache curl
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy initial config (HTTP only - for cert issuance)
-# The SSL config will be copied after certs are issued
 COPY default-initial.conf /etc/nginx/conf.d/default.conf
 
 # Store SSL config in a separate location (not in conf.d to avoid loading)
@@ -23,13 +22,21 @@ COPY frontend-dist/ /var/www/frontend/
 # Create SSL directory structure (certs will be mounted)
 RUN mkdir -p /etc/nginx/ssl/live/cybersentinels.cloud
 
-# Script to switch configs after SSL is ready
-RUN echo '#!/bin/sh' > /usr/local/bin/enable-ssl.sh && \
-    echo 'if [ -f /etc/nginx/ssl/live/cybersentinels.cloud/fullchain.pem ]; then' >> /usr/local/bin/enable-ssl.sh && \
-    echo '  cp /etc/nginx/ssl-config/default-ssl.conf /etc/nginx/conf.d/default.conf' >> /usr/local/bin/enable-ssl.sh && \
-    echo '  nginx -s reload' >> /usr/local/bin/enable-ssl.sh && \
-    echo 'fi' >> /usr/local/bin/enable-ssl.sh && \
-    chmod +x /usr/local/bin/enable-ssl.sh
+# Create entrypoint script that checks for SSL certs on startup
+RUN echo '#!/bin/sh' > /docker-entrypoint-ssl.sh && \
+    echo 'set -e' >> /docker-entrypoint-ssl.sh && \
+    echo '' >> /docker-entrypoint-ssl.sh && \
+    echo '# Check if SSL certificates exist and switch to SSL config' >> /docker-entrypoint-ssl.sh && \
+    echo 'if [ -f /etc/nginx/ssl/live/cybersentinels.cloud/fullchain.pem ]; then' >> /docker-entrypoint-ssl.sh && \
+    echo '  echo "SSL certificates found, enabling HTTPS configuration..."' >> /docker-entrypoint-ssl.sh && \
+    echo '  cp /etc/nginx/ssl-config/default-ssl.conf /etc/nginx/conf.d/default.conf' >> /docker-entrypoint-ssl.sh && \
+    echo 'else' >> /docker-entrypoint-ssl.sh && \
+    echo '  echo "No SSL certificates found, using HTTP-only configuration..."' >> /docker-entrypoint-ssl.sh && \
+    echo 'fi' >> /docker-entrypoint-ssl.sh && \
+    echo '' >> /docker-entrypoint-ssl.sh && \
+    echo '# Execute the original nginx entrypoint' >> /docker-entrypoint-ssl.sh && \
+    echo 'exec /docker-entrypoint.sh "$@"' >> /docker-entrypoint-ssl.sh && \
+    chmod +x /docker-entrypoint-ssl.sh
 
 # Health check (using curl instead of wget for alpine compatibility)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -37,4 +44,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 EXPOSE 80 443
 
+ENTRYPOINT ["/docker-entrypoint-ssl.sh"]
 CMD ["nginx", "-g", "daemon off;"]

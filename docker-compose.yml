@@ -93,7 +93,7 @@ services:
       - SAST_API_URL=http://sast:8080
       - RASP_API_URL=http://rasp:9000
       # In-app RASP configuration
-      - RASP_ENABLED=${RASP_ENABLED:-true}
+      - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
       - RASP_SINK_DATABASE=${RASP_SINK_DATABASE:-true}
       - RASP_SINK_HTTP=${RASP_SINK_HTTP:-true}
@@ -145,7 +145,7 @@ services:
       - RASP_API_URL=http://rasp:9000
       - ZAP_API_URL=http://zap:8080
       # In-app RASP configuration
-      - RASP_ENABLED=${RASP_ENABLED:-true}
+      - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
       - RASP_SINK_DATABASE=${RASP_SINK_DATABASE:-true}
       - RASP_SINK_HTTP=${RASP_SINK_HTTP:-true}
