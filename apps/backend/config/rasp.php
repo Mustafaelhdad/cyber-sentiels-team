@@ -10,7 +10,7 @@ return [
     | instrumentation or monitoring will occur.
     |
     */
-  'enabled' => env('RASP_ENABLED', true),
+  'enabled' => env('RASP_ENABLED', false),
 
   /*
     |--------------------------------------------------------------------------

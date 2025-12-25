@@ -26,8 +26,8 @@ class RaspMiddleware
    */
   public function handle(Request $request, Closure $next): Response
   {
-    // Skip if RASP is disabled
-    if (!config('rasp.enabled', true)) {
+    // Skip if RASP is disabled (default to false for safety)
+    if (!config('rasp.enabled', false)) {
       return $next($request);
     }
 
