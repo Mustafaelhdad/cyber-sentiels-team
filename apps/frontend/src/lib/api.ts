@@ -172,6 +172,90 @@ function getAuthHeaders(): HeadersInit {
 }
 
 /**
+ * Isolated fetch for Auth Tool testing.
+ *
+ * This fetch does NOT throw ApiError (which triggers global auth error handling).
+ * Auth Tool is a separate service being tested - its auth errors should NOT
+ * affect the main website's authentication state.
+ *
+ * Returns { success: true, data } on success, { success: false, error, status } on failure.
+ */
+export async function authToolFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<
+  { success: true; data: T } | { success: false; error: string; status: number }
+> {
+  const method = (options.method ?? "GET").toUpperCase();
+
+  // For mutations, ensure CSRF cookie is present
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    await ensureCsrf();
+  }
+
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    ...(options.headers ?? {}),
+  };
+
+  // Add Authorization header if token exists (for main website auth)
+  const token = getAuthToken();
+  if (token) {
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  }
+
+  // Add XSRF token header for CSRF protection
+  const xsrfToken = getXsrfToken();
+  if (xsrfToken) {
+    (headers as Record<string, string>)["X-XSRF-TOKEN"] = xsrfToken;
+  }
+
+  // If body is present and not FormData, set JSON content type
+  if (options.body && !(options.body instanceof FormData)) {
+    (headers as Record<string, string>)["Content-Type"] = "application/json";
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      let errorMessage = `Request failed: ${res.status}`;
+      try {
+        const json = JSON.parse(text);
+        errorMessage = json.message || json.error || errorMessage;
+      } catch {
+        // ignore parse errors
+      }
+
+      // Return error result instead of throwing - prevents global auth error handling
+      return { success: false, error: errorMessage, status: res.status };
+    }
+
+    // Handle 204 No Content
+    if (res.status === 204) {
+      return { success: true, data: undefined as T };
+    }
+
+    // Parse JSON response
+    try {
+      const data = JSON.parse(text) as T;
+      return { success: true, data };
+    } catch {
+      return { success: false, error: "Invalid JSON response", status: 500 };
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Network error";
+    return { success: false, error: message, status: 0 };
+  }
+}
+
+/**
  * Fetch a resource as a Blob (for binary files like PDF, images).
  * Includes credentials and handles errors.
  */

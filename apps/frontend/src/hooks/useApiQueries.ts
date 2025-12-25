@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, authToolFetch } from "@/lib/api";
 
 // ============================================================================
 // Types
@@ -2089,6 +2089,277 @@ export function useSiemUpload() {
       queryClient.invalidateQueries({ queryKey: siemQueryKeys.distribution });
       queryClient.invalidateQueries({ queryKey: siemQueryKeys.timeline() });
       queryClient.invalidateQueries({ queryKey: siemQueryKeys.logs() });
+    },
+  });
+}
+
+// ============================================================================
+// Auth Tool Types
+// ============================================================================
+
+/** Auth Tool health response */
+export interface AuthToolHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+  health: {
+    service: string;
+    status: string;
+    timestamp: number;
+  } | null;
+}
+
+export interface AuthToolStatsResponse {
+  service: string;
+  status: string;
+  users_registered: number;
+  pending_sessions: number;
+  jwt_ttl_seconds: number;
+  timestamp: number;
+}
+
+export interface AuthToolSignupResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface AuthToolSigninResponse {
+  success: boolean;
+  message: string;
+  session_id: string;
+  requires_otp: boolean;
+}
+
+export interface AuthToolVerifyOtpResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: string;
+  expires_in: number;
+}
+
+export interface AuthToolVerifyTokenResponse {
+  valid: boolean;
+  user?: string;
+  expires_at?: number;
+  issued_at?: number;
+  error?: string;
+}
+
+export interface AuthToolUser {
+  username: string;
+}
+
+export interface AuthToolUsersResponse {
+  users: AuthToolUser[];
+  total: number;
+}
+
+export interface AuthToolTestFlowResult {
+  signup: { success: boolean; data?: unknown; error?: string } | null;
+  signin: { success: boolean; data?: unknown; error?: string } | null;
+  verify_otp: { success: boolean; data?: unknown; error?: string } | null;
+  verify_token: { success: boolean; data?: unknown } | null;
+  get_user: unknown | null;
+  overall_success: boolean;
+  token?: string;
+}
+
+export interface AuthToolTestFlowResponse {
+  test_results: AuthToolTestFlowResult;
+  overall_success: boolean;
+}
+
+// ============================================================================
+// Auth Tool Query Keys
+// ============================================================================
+
+export const authToolQueryKeys = {
+  all: ["auth-tool"] as const,
+  health: ["auth-tool", "health"] as const,
+  stats: ["auth-tool", "stats"] as const,
+  users: ["auth-tool", "users"] as const,
+};
+
+// ============================================================================
+// Auth Tool Queries
+// ============================================================================
+
+/**
+ * Check Auth Tool service health.
+ */
+export function useAuthToolHealth() {
+  return useQuery({
+    queryKey: authToolQueryKeys.health,
+    queryFn: () => apiFetch<AuthToolHealthResponse>("/auth-tool/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch Auth Tool statistics.
+ */
+export function useAuthToolStats() {
+  return useQuery({
+    queryKey: authToolQueryKeys.stats,
+    queryFn: () => apiFetch<AuthToolStatsResponse>("/auth-tool/stats"),
+    staleTime: 1000 * 15, // 15 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch Auth Tool users list.
+ */
+export function useAuthToolUsers(token?: string) {
+  return useQuery({
+    queryKey: authToolQueryKeys.users,
+    queryFn: () =>
+      apiFetch<AuthToolUsersResponse>("/auth-tool/users", {
+        headers: token ? { "X-Auth-Token": token } : undefined,
+      }),
+    staleTime: 1000 * 60, // 1 minute
+    enabled: !!token,
+  });
+}
+
+// ============================================================================
+// Auth Tool Mutations
+// ============================================================================
+
+/**
+ * Sign up a new user in Auth Tool.
+ * Uses isolated fetch to prevent auth errors from affecting main website session.
+ */
+export function useAuthToolSignup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { username: string; password: string }) => {
+      const result = await authToolFetch<AuthToolSignupResponse>(
+        "/auth-tool/signup",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: authToolQueryKeys.users });
+    },
+  });
+}
+
+/**
+ * Sign in to Auth Tool (Step 1: credential verification).
+ * Uses isolated fetch to prevent auth errors from affecting main website session.
+ */
+export function useAuthToolSignin() {
+  return useMutation({
+    mutationFn: async (payload: { username: string; password: string }) => {
+      const result = await authToolFetch<AuthToolSigninResponse>(
+        "/auth-tool/signin",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Verify OTP in Auth Tool (Step 2: complete authentication).
+ * Uses isolated fetch to prevent auth errors from affecting main website session.
+ */
+export function useAuthToolVerifyOtp() {
+  return useMutation({
+    mutationFn: async (payload: { session_id: string; otp: string }) => {
+      const result = await authToolFetch<AuthToolVerifyOtpResponse>(
+        "/auth-tool/verify-otp",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Verify a JWT token.
+ * Uses isolated fetch to prevent auth errors from affecting main website session.
+ */
+export function useAuthToolVerifyToken() {
+  return useMutation({
+    mutationFn: async (payload: { token: string }) => {
+      const result = await authToolFetch<AuthToolVerifyTokenResponse>(
+        "/auth-tool/verify-token",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Test the complete authentication flow.
+ * Uses isolated fetch to prevent auth errors from affecting main website session.
+ */
+export function useAuthToolTestFlow() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      username: string;
+      password: string;
+      otp?: string;
+    }) => {
+      const result = await authToolFetch<AuthToolTestFlowResponse>(
+        "/auth-tool/test-flow",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: authToolQueryKeys.users });
     },
   });
 }

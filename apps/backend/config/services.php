@@ -84,4 +84,15 @@ return [
     'timeout' => env('SIEM_TIMEOUT', 120),
   ],
 
+  /*
+    |--------------------------------------------------------------------------
+    | Auth Tool Service Configuration
+    |--------------------------------------------------------------------------
+    */
+
+  'auth_tool' => [
+    'url' => env('AUTH_API_URL', 'http://auth:5000'),
+    'timeout' => env('AUTH_TIMEOUT', 30),
+  ],
+
 ];

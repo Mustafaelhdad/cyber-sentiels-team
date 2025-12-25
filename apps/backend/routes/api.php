@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AuthToolController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
@@ -173,5 +174,25 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports
     Route::get('/reports/latest', [SiemController::class, 'getLatestReport']);
     Route::get('/reports/{reportName}', [SiemController::class, 'getReport']);
+  });
+
+  // Auth Tool routes (global, not project-scoped)
+  Route::prefix('auth-tool')->group(function () {
+    // Health and status
+    Route::get('/health', [AuthToolController::class, 'health']);
+    Route::get('/stats', [AuthToolController::class, 'stats']);
+
+    // User management
+    Route::post('/signup', [AuthToolController::class, 'signup']);
+    Route::post('/signin', [AuthToolController::class, 'signin']);
+    Route::post('/verify-otp', [AuthToolController::class, 'verifyOtp']);
+
+    // Token operations
+    Route::post('/verify-token', [AuthToolController::class, 'verifyToken']);
+    Route::get('/me', [AuthToolController::class, 'me']);
+    Route::get('/users', [AuthToolController::class, 'users']);
+
+    // Testing
+    Route::post('/test-flow', [AuthToolController::class, 'testFlow']);
   });
 });
