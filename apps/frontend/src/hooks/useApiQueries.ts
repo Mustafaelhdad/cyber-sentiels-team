@@ -1576,3 +1576,519 @@ export function getRaspTestRunReportViewUrl(
 ): string {
   return `/api/projects/${projectId}/rasp/runs/${runId}/report/view`;
 }
+
+// ============================================================================
+// SIEM Types
+// ============================================================================
+
+export interface SiemAlert {
+  id: number;
+  siem_alert_id: string | null;
+  rule_id: string | null;
+  rule_name: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  description: string | null;
+  log_entry: string;
+  source: string;
+  tip_label: string | null;
+  tip_confidence: number | null;
+  tip_is_malicious: boolean | null;
+  acknowledged: boolean;
+  alert_timestamp: string | null;
+  created_at: string;
+  updated_at: string;
+  severity_label: { label: string; color: string };
+  truncated_log: string;
+  has_tip_analysis: boolean;
+}
+
+export interface SiemStats {
+  total_logs_processed: number;
+  total_alerts: number;
+  high_severity_alerts: number;
+  critical_alerts: number;
+  system_status: string;
+  local?: {
+    local_alerts_total: number;
+    local_alerts_unacknowledged: number;
+    local_alerts_critical: number;
+    local_alerts_high: number;
+    local_alerts_medium: number;
+    local_alerts_low: number;
+    alerts_last_24h: number;
+    alerts_last_7d: number;
+  };
+}
+
+export interface SiemRule {
+  id: string;
+  name: string;
+  pattern: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  description: string;
+  threshold?: number;
+  time_window?: number;
+}
+
+export interface SiemAlertDistribution {
+  by_severity: Record<string, number>;
+  by_source: Record<string, number>;
+  top_rules: Record<string, number>;
+}
+
+export interface SiemTimelineDataPoint {
+  timestamp: string;
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export interface SiemTimeline {
+  period: string;
+  interval: string;
+  data: SiemTimelineDataPoint[];
+}
+
+// SIEM API Responses
+interface SiemHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+  stats: SiemStats | null;
+}
+
+interface SiemStatsResponse extends SiemStats {}
+
+interface SiemRulesResponse {
+  total: number;
+  rules: SiemRule[];
+}
+
+interface SiemAlertsResponse {
+  total: number;
+  alerts: SiemAlert[];
+}
+
+interface SiemLocalAlertsResponse {
+  data: SiemAlert[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+interface SiemLogsResponse {
+  total: number;
+  logs: string[];
+}
+
+interface SiemAnalyzeResponse {
+  success: boolean;
+  message: string;
+  logs_processed: number;
+  alerts_generated: number;
+  alerts: SiemAlert[];
+  report_url: string | null;
+  stats: SiemStats | null;
+}
+
+interface SiemIngestResponse {
+  success: boolean;
+  alerts: SiemAlert[];
+  processed: boolean;
+}
+
+interface SiemDistributionResponse extends SiemAlertDistribution {}
+
+interface SiemTimelineResponse extends SiemTimeline {}
+
+// ============================================================================
+// SIEM Query Keys
+// ============================================================================
+
+export const siemQueryKeys = {
+  health: ["siem-health"] as const,
+  stats: ["siem-stats"] as const,
+  rules: ["siem-rules"] as const,
+  alerts: (filters?: Record<string, string | number | boolean>) =>
+    ["siem-alerts", filters ?? {}] as const,
+  localAlerts: (filters?: Record<string, string | number | boolean>) =>
+    ["siem-local-alerts", filters ?? {}] as const,
+  alert: (id: number) => ["siem-alert", id] as const,
+  logs: (limit?: number) => ["siem-logs", limit ?? 100] as const,
+  distribution: ["siem-distribution"] as const,
+  timeline: (period?: string) => ["siem-timeline", period ?? "24h"] as const,
+};
+
+// ============================================================================
+// SIEM Queries
+// ============================================================================
+
+/**
+ * Check SIEM service health.
+ */
+export function useSiemHealth() {
+  return useQuery({
+    queryKey: siemQueryKeys.health,
+    queryFn: () => apiFetch<SiemHealthResponse>("/siem/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch SIEM statistics.
+ */
+export function useSiemStats() {
+  return useQuery({
+    queryKey: siemQueryKeys.stats,
+    queryFn: () => apiFetch<SiemStatsResponse>("/siem/stats"),
+    staleTime: 1000 * 15, // 15 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch SIEM detection rules.
+ */
+export function useSiemRules() {
+  return useQuery({
+    queryKey: siemQueryKeys.rules,
+    queryFn: () => apiFetch<SiemRulesResponse>("/siem/rules"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch alerts from SIEM container.
+ */
+export function useSiemAlerts(limit = 100) {
+  return useQuery({
+    queryKey: siemQueryKeys.alerts({ limit }),
+    queryFn: () => apiFetch<SiemAlertsResponse>(`/siem/alerts?limit=${limit}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch local alerts with filtering and pagination.
+ */
+export function useSiemLocalAlerts(filters?: {
+  severity?: string;
+  acknowledged?: boolean;
+  source?: string;
+  rule_id?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  order_by?: string;
+  order_dir?: "asc" | "desc";
+  per_page?: number;
+  page?: number;
+}) {
+  return useQuery({
+    queryKey: siemQueryKeys.localAlerts(filters),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, String(value));
+          }
+        });
+      }
+      const queryString = params.toString();
+      return apiFetch<SiemLocalAlertsResponse>(
+        `/siem/alerts/local${queryString ? `?${queryString}` : ""}`
+      );
+    },
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch a single SIEM alert.
+ */
+export function useSiemAlert(id: number | undefined) {
+  return useQuery({
+    queryKey: siemQueryKeys.alert(id ?? 0),
+    queryFn: () => apiFetch<SiemAlert>(`/siem/alerts/${id}`),
+    enabled: !!id,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+/**
+ * Fetch recent logs from SIEM.
+ */
+export function useSiemLogs(limit = 100) {
+  return useQuery({
+    queryKey: siemQueryKeys.logs(limit),
+    queryFn: () => apiFetch<SiemLogsResponse>(`/siem/logs?limit=${limit}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch alert distribution.
+ */
+export function useSiemDistribution() {
+  return useQuery({
+    queryKey: siemQueryKeys.distribution,
+    queryFn: () =>
+      apiFetch<SiemDistributionResponse>("/siem/alerts/distribution"),
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+/**
+ * Fetch alert timeline.
+ */
+export function useSiemTimeline(period = "24h") {
+  return useQuery({
+    queryKey: siemQueryKeys.timeline(period),
+    queryFn: () =>
+      apiFetch<SiemTimelineResponse>(`/siem/alerts/timeline?period=${period}`),
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000, // Poll every 30s
+  });
+}
+
+// ============================================================================
+// SIEM Mutations
+// ============================================================================
+
+/**
+ * Analyze log text.
+ */
+export function useSiemAnalyze() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { logs: string; source?: string }) =>
+      apiFetch<SiemAnalyzeResponse>("/siem/analyze", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.alerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.distribution });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.timeline() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.logs() });
+    },
+  });
+}
+
+/**
+ * Ingest a single log entry.
+ */
+export function useSiemIngest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      log: string;
+      source?: string;
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<SiemIngestResponse>("/siem/ingest", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.alerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.logs() });
+    },
+  });
+}
+
+/**
+ * Ingest multiple log entries.
+ */
+export function useSiemIngestBatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      logs: (string | { log: string; source?: string })[];
+      default_source?: string;
+    }) =>
+      apiFetch<{
+        success: boolean;
+        logs_processed: number;
+        alerts_generated: number;
+        alerts: SiemAlert[];
+      }>("/siem/ingest/batch", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.alerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.logs() });
+    },
+  });
+}
+
+/**
+ * Acknowledge a SIEM alert.
+ */
+export function useSiemAcknowledgeAlert() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (alertId: number) =>
+      apiFetch<{ message: string; alert: SiemAlert }>(
+        `/siem/alerts/${alertId}/acknowledge`,
+        { method: "POST" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+    },
+  });
+}
+
+/**
+ * Bulk acknowledge SIEM alerts.
+ */
+export function useSiemAcknowledgeBulk() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (alertIds: number[]) =>
+      apiFetch<{ message: string; count: number }>(
+        "/siem/alerts/acknowledge-bulk",
+        {
+          method: "POST",
+          body: JSON.stringify({ alert_ids: alertIds }),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+    },
+  });
+}
+
+/**
+ * Delete a SIEM alert.
+ */
+export function useSiemDeleteAlert() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (alertId: number) =>
+      apiFetch<{ success: boolean; message: string }>(
+        `/siem/alerts/${alertId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.distribution });
+    },
+  });
+}
+
+/**
+ * Bulk delete SIEM alerts.
+ */
+export function useSiemDeleteBulk() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (alertIds: number[]) =>
+      apiFetch<{ success: boolean; message: string; count: number }>(
+        "/siem/alerts/bulk",
+        {
+          method: "DELETE",
+          body: JSON.stringify({ alert_ids: alertIds }),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.distribution });
+    },
+  });
+}
+
+/**
+ * Upload and analyze a log file.
+ */
+export function useSiemUpload() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { file: File; source?: string }) => {
+      const formData = new FormData();
+      formData.append("file", payload.file);
+      if (payload.source) {
+        formData.append("source", payload.source);
+      }
+
+      const API_BASE = import.meta.env.VITE_API_URL || "/api";
+      const token = localStorage.getItem("auth_token");
+
+      // Get CSRF cookie first
+      await fetch(`${API_BASE.replace("/api", "")}/sanctum/csrf-cookie`, {
+        credentials: "include",
+      });
+
+      const xsrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+      const xsrfToken = xsrfMatch ? decodeURIComponent(xsrfMatch[1]) : null;
+
+      const headers: HeadersInit = {
+        Accept: "application/json",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      if (xsrfToken) {
+        headers["X-XSRF-TOKEN"] = xsrfToken;
+      }
+
+      const res = await fetch(`${API_BASE}/siem/upload`, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        let message = `Request failed: ${res.status}`;
+        try {
+          const json = JSON.parse(text);
+          message = json.message || json.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      return res.json() as Promise<SiemAnalyzeResponse>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.alerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.localAlerts() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.distribution });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.timeline() });
+      queryClient.invalidateQueries({ queryKey: siemQueryKeys.logs() });
+    },
+  });
+}

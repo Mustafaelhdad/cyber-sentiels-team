@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs and uploads (will be created fresh in container)
+logs/
+uploads/
+reports/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Local development
+*.local
+.env.local
+.env.development
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Nested tools directory (not needed)
+tools/
+

@@ -1,0 +1,318 @@
+{
+    "rules": [
+        {
+            "id": "RULE001",
+            "name": "Multiple Failed Logins",
+            "pattern": "Failed login",
+            "threshold": 5,
+            "time_window": 300,
+            "severity": "HIGH",
+            "description": "More than 5 failed login attempts within 5 minutes"
+        },
+        {
+            "id": "RULE002",
+            "name": "Brute Force Attempt",
+            "pattern": "authentication failure",
+            "threshold": 10,
+            "time_window": 600,
+            "severity": "CRITICAL",
+            "description": "Potential brute force attack detected"
+        },
+        {
+            "id": "RULE003",
+            "name": "SQL Injection Attempt",
+            "pattern": "(union select|select.*from|insert into|drop table|' OR '1'='1')",
+            "severity": "HIGH",
+            "description": "SQL injection pattern detected"
+        },
+        {
+            "id": "RULE004",
+            "name": "XSS Attempt",
+            "pattern": "(<script>|alert\\(|onerror=|onload=)",
+            "severity": "HIGH",
+            "description": "Cross-site scripting attempt detected"
+        },
+        {
+            "id": "RULE005",
+            "name": "Port Scan Detection",
+            "pattern": "(port scan|connection refused.*multiple ports)",
+            "severity": "MEDIUM",
+            "description": "Potential port scanning activity"
+        },
+        {
+            "id": "RULE006",
+            "name": "Admin Access",
+            "pattern": "(admin|root).*(login|access)",
+            "severity": "MEDIUM",
+            "description": "Administrator access detected"
+        },
+        {
+            "id": "RULE007",
+            "name": "File Upload Attempt",
+            "pattern": "(file upload|\\.php|\\.exe|\\.sh upload)",
+            "severity": "MEDIUM",
+            "description": "File upload attempt detected"
+        },
+        
+        
+        {
+            "id": "RULE008",
+            "name": "Directory Traversal",
+            "pattern": "(\\.\\./|\\.\\.\\\\|%2e%2e%2f|/etc/passwd|/windows/win\\.ini)",
+            "severity": "HIGH",
+            "description": "Directory traversal/path traversal attack"
+        },
+        {
+            "id": "RULE009",
+            "name": "Command Injection",
+            "pattern": "(\\|.*ls|;.*whoami|`.*id`|\\$\\(.*\\)|cmd\\.exe.*/c)",
+            "severity": "CRITICAL",
+            "description": "Command injection attempt detected"
+        },
+        {
+            "id": "RULE010",
+            "name": "NoSQL Injection",
+            "pattern": "(\\{\\\\$.*\\}|\\[\\].*\\[\\]|\\\\.\\$.*\\(|mongo.*injection|nosql.*inject)",
+            "severity": "HIGH",
+            "description": "NoSQL injection attempt detected"
+        },
+        {
+            "id": "RULE011",
+            "name": "LFI/RFI Attack",
+            "pattern": "(include.*\\.\\.|require.*http:|php://input|data:text/html|\\?page=.*\\.\\./)",
+            "severity": "HIGH",
+            "description": "Local/Remote File Inclusion attack"
+        },
+        {
+            "id": "RULE012",
+            "name": "CSRF Attack Pattern",
+            "pattern": "(csrf.*token.*missing|cross.*site.*request.*forgery|referer.*mismatch)",
+            "severity": "MEDIUM",
+            "description": "Potential CSRF attack detected"
+        },
+        {
+            "id": "RULE013",
+            "name": "XXE Injection",
+            "pattern": "(<!DOCTYPE.*\\[|<!ENTITY.*SYSTEM|xxe.*injection|xml.*external.*entity)",
+            "severity": "CRITICAL",
+            "description": "XML External Entity injection attack"
+        },
+        {
+            "id": "RULE014",
+            "name": "SSRF Attack",
+            "pattern": "(url=.*localhost|url=.*127\\.0\\.0\\.1|url=.*internal|url=.*192\\.168|url=.*10\\.|url=.*172\\.(1[6-9]|2[0-9]|3[0-1]))",
+            "severity": "HIGH",
+            "description": "Server Side Request Forgery attempt"
+        },
+        {
+            "id": "RULE015",
+            "name": "Open Redirect",
+            "pattern": "(redirect=.*http|return=.*http|url=.*http|next=.*http|r=.*http).*(evil\\.com|hacker\\.site|malicious\\.domain)",
+            "severity": "MEDIUM",
+            "description": "Open redirect vulnerability exploitation"
+        },
+        
+       
+        {
+            "id": "RULE016",
+            "name": "DNS Tunneling",
+            "pattern": "(base64.*dns|dns.*tunnel|long.*domain|\\w{50,}\\.com|txt.*exfil)",
+            "severity": "CRITICAL",
+            "description": "DNS tunneling for data exfiltration"
+        },
+        {
+            "id": "RULE017",
+            "name": "ICMP Tunneling",
+            "pattern": "(icmp.*data|ping.*-s.*\\d{3,}|icmp.*exfil|ping.*large.*packet)",
+            "severity": "HIGH",
+            "description": "ICMP tunneling for covert communication"
+        },
+        {
+            "id": "RULE018",
+            "name": "ARP Spoofing",
+            "pattern": "(arp.*spoof|mac.*duplicate|arp.*cache.*poison|gratuitous.*arp)",
+            "severity": "HIGH",
+            "description": "ARP spoofing/poisoning detected"
+        },
+        {
+            "id": "RULE019",
+            "name": "SYN Flood Attack",
+            "pattern": "(syn.*flood|syn.*attack|syn.*received.*exceeded|syn.*rate.*limit)",
+            "threshold": 1000,
+            "time_window": 10,
+            "alert_on_match": true,
+            "severity": "CRITICAL",
+            "description": "SYN flood DDoS attack detected"
+        },
+        {
+            "id": "RULE020",
+            "name": "ICMP Flood",
+            "pattern": "(icmp.*flood|ping.*flood|icmp.*storm|ping.*of.*death)",
+            "threshold": 500,
+            "time_window": 10,
+            "alert_on_match": true,
+            "severity": "CRITICAL",
+            "description": "ICMP flood attack detected"
+        },
+        {
+            "id": "RULE021",
+            "name": "DNS Amplification",
+            "pattern": "(dns.*amplification|dns.*reflection|large.*dns.*response)",
+            "severity": "HIGH",
+            "description": "DNS amplification attack detected"
+        },
+        {
+            "id": "RULE022",
+            "name": "VPN Tunnel Detection",
+            "pattern": "(openvpn.*tunnel|wireguard.*peer|ipsec.*established|pptp.*connection)",
+            "severity": "LOW",
+            "description": "VPN tunnel establishment detected"
+        },
+        {
+            "id": "RULE023",
+            "name": "Tor Connection",
+            "pattern": "(tor.*node|onion.*router|tor.*connection|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}:9050|:9001)",
+            "severity": "MEDIUM",
+            "description": "Tor network connection detected"
+        },
+        
+        
+        {
+            "id": "RULE024",
+            "name": "Ransomware Activity",
+            "pattern": "(encrypt.*files|decrypt.*payment|bitcoin.*ransom|your.*files.*encrypted|wannacry|locky|petya)",
+            "severity": "CRITICAL",
+            "description": "Ransomware-related activity detected"
+        },
+        {
+            "id": "RULE025",
+            "name": "Crypto Mining",
+            "pattern": "(xmrig|ccminer|minerd|cpuminer|monero.*miner|bitcoin.*mining|mining.*pool)",
+            "severity": "HIGH",
+            "description": "Cryptocurrency mining activity detected"
+        },
+        {
+            "id": "RULE026",
+            "name": "Reverse Shell",
+            "pattern": "(bash.*-i.*>&|nc.*-e.*/bin/sh|python.*-c.*socket|php.*fsockopen|powershell.*-nop.*-c)",
+            "severity": "CRITICAL",
+            "description": "Reverse shell attempt detected"
+        },
+        {
+            "id": "RULE027",
+            "name": "Web Shell Upload",
+            "pattern": "(c99shell|r57shell|wso.*php|b374k.*php|webshell.*upload|malicious.*php)",
+            "severity": "CRITICAL",
+            "description": "Web shell file upload detected"
+        },
+        {
+            "id": "RULE028",
+            "name": "Keylogger Activity",
+            "pattern": "(keylogger.*detected|keystroke.*logging|keyboard.*hook|input.*spying)",
+            "severity": "CRITICAL",
+            "description": "Keylogger activity detected"
+        },
+        {
+            "id": "RULE029",
+            "name": "Botnet Communication",
+            "pattern": "(c&c.*server|command.*control|bot.*checkin|beacon.*interval|malware.*callback)",
+            "severity": "CRITICAL",
+            "description": "Botnet command and control communication"
+        },
+        {
+            "id": "RULE030",
+            "name": "Worm Propagation",
+            "pattern": "(worm.*propagation|self.*replicate|network.*worm|mass.*scanning.*worm)",
+            "severity": "CRITICAL",
+            "description": "Network worm propagation detected"
+        },
+        {
+            "id": "RULE031",
+            "name": "Trojan Downloader",
+            "pattern": "(trojan.*downloader|dropper.*executed|download.*execute|malware.*dropper)",
+            "severity": "HIGH",
+            "description": "Trojan downloader/dropper activity"
+        },
+        {
+            "id": "RULE032",
+            "name": "Spyware Data Exfil",
+            "pattern": "(screenshot.*upload|screen.*capture.*send|clipboard.*data.*exfil|microphone.*access)",
+            "severity": "CRITICAL",
+            "description": "Spyware data exfiltration detected"
+        },
+        {
+            "id": "RULE033",
+            "name": "Malicious PowerShell",
+            "pattern": "(powershell.*-enc|powershell.*-e.*|frombase64string|invoke.*expression|iex.*http)",
+            "severity": "HIGH",
+            "description": "Malicious PowerShell command execution"
+        },
+        {
+            "id": "RULE034",
+            "name": "Living Off The Land",
+            "pattern": "(certutil.*-urlcache|bitsadmin.*/transfer|wmic.*process.*call|rundll32.*javascript)",
+            "severity": "HIGH",
+            "description": "Living Off The Land Binary (LOLBin) abuse"
+        },
+        {
+            "id": "RULE035",
+            "name": "Credential Dumping",
+            "pattern": "(mimikatz|lsadump|sekurlsa|procdump.*lsass|credential.*dump)",
+            "severity": "CRITICAL",
+            "description": "Credential dumping activity detected"
+        },
+        {
+            "id": "RULE036",
+            "name": "Persistence Mechanism",
+            "pattern": "(registry.*run|startup.*folder|scheduled.*task.*malware|service.*installation)",
+            "severity": "HIGH",
+            "description": "Malware persistence mechanism detected"
+        },
+        
+        
+        {
+            "id": "RULE037",
+            "name": "Packet Fragmentation Attack",
+            "pattern": "(fragmentation.*attack|teardrop.*attack|ip.*fragment.*overlap)",
+            "severity": "HIGH",
+            "description": "Packet fragmentation attack detected"
+        },
+        {
+            "id": "RULE038",
+            "name": "MAC Address Spoofing",
+            "pattern": "(mac.*spoof|mac.*changed|mac.*address.*modified)",
+            "severity": "MEDIUM",
+            "description": "MAC address spoofing detected"
+        },
+        {
+            "id": "RULE039",
+            "name": "VLAN Hopping",
+            "pattern": "(vlan.*hopping|double.*tagging|switch.*spoofing)",
+            "severity": "HIGH",
+            "description": "VLAN hopping attack detected"
+        },
+        {
+            "id": "RULE040",
+            "name": "DHCP Starvation",
+            "pattern": "(dhcp.*starvation|dhcp.*exhaustion|dhcp.*lease.*flood)",
+            "severity": "MEDIUM",
+            "description": "DHCP starvation attack detected"
+        },
+        
+        
+        {
+            "id": "RULE041",
+            "name": "WAF Bypass Attempt",
+            "pattern": "(bypass.*waf|waf.*evasion|modsecurity.*bypass|cloudflare.*bypass)",
+            "severity": "HIGH",
+            "description": "Web Application Firewall bypass attempt"
+        },
+        {
+            "id": "RULE042",
+            "name": "OWASP Top 10 Detection",
+            "pattern": "(injection.*vulnerability|broken.*authentication|sensitive.*data.*exposure|xxe|broken.*access.*control|security.*misconfiguration)",
+            "severity": "HIGH",
+            "description": "OWASP Top 10 vulnerability detected"
+        }
+    ]
+}

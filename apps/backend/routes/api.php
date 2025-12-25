@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
 use App\Http\Controllers\Api\RunStreamController;
 use App\Http\Controllers\Api\SastController;
+use App\Http\Controllers\Api\SiemController;
 use App\Http\Controllers\Api\WafProxyController;
 use App\Http\Controllers\Api\WafLogController;
 use App\Http\Controllers\RaspIncidentController;
@@ -133,5 +134,44 @@ Route::middleware('auth:sanctum')->group(function () {
       Route::get('/results', [RaspDemoController::class, 'results']);
       Route::delete('/clear', [RaspDemoController::class, 'clear']);
     });
+  });
+
+  // SIEM routes (global, not project-scoped)
+  Route::prefix('siem')->group(function () {
+    // Health and status
+    Route::get('/health', [SiemController::class, 'health']);
+    Route::get('/stats', [SiemController::class, 'stats']);
+
+    // Detection rules
+    Route::get('/rules', [SiemController::class, 'rules']);
+    Route::post('/rules', [SiemController::class, 'saveRule']);
+    Route::delete('/rules/{ruleId}', [SiemController::class, 'deleteRule']);
+
+    // Alerts from SIEM container
+    Route::get('/alerts', [SiemController::class, 'alerts']);
+
+    // Local alerts (stored in database)
+    Route::get('/alerts/local', [SiemController::class, 'localAlerts']);
+    Route::get('/alerts/distribution', [SiemController::class, 'alertDistribution']);
+    Route::get('/alerts/timeline', [SiemController::class, 'alertTimeline']);
+    Route::get('/alerts/export', [SiemController::class, 'exportAlerts']);
+    Route::get('/alerts/{id}', [SiemController::class, 'showAlert']);
+    Route::post('/alerts/{id}/acknowledge', [SiemController::class, 'acknowledgeAlert']);
+    Route::post('/alerts/acknowledge-bulk', [SiemController::class, 'acknowledgeAlertsBulk']);
+    Route::delete('/alerts/{id}', [SiemController::class, 'deleteAlert']);
+    Route::delete('/alerts/bulk', [SiemController::class, 'deleteAlertsBulk']);
+
+    // Logs
+    Route::get('/logs', [SiemController::class, 'logs']);
+
+    // Log analysis
+    Route::post('/upload', [SiemController::class, 'upload']);
+    Route::post('/analyze', [SiemController::class, 'analyze']);
+    Route::post('/ingest', [SiemController::class, 'ingest']);
+    Route::post('/ingest/batch', [SiemController::class, 'ingestBatch']);
+
+    // Reports
+    Route::get('/reports/latest', [SiemController::class, 'getLatestReport']);
+    Route::get('/reports/{reportName}', [SiemController::class, 'getReport']);
   });
 });

