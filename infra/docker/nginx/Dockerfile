@@ -1,8 +1,8 @@
 # Nginx with embedded configuration for production
 FROM nginx:alpine
 
-# Install curl and inotify-tools for healthcheck and file watching
-RUN apk add --no-cache curl inotify-tools openssl
+# Install curl and openssl for healthcheck and certificate validation
+RUN apk add --no-cache curl openssl
 
 # Remove default config
 RUN rm /etc/nginx/conf.d/default.conf
@@ -22,7 +22,7 @@ COPY frontend-dist/ /var/www/frontend/
 # Create SSL directory structure (certs will be mounted)
 RUN mkdir -p /etc/nginx/ssl/live/cybersentinels.cloud
 
-# Create entrypoint script that checks for SSL certs on startup and watches for changes
+# Create entrypoint script that checks for SSL certs on startup and polls for changes
 RUN cat > /docker-entrypoint-ssl.sh << 'ENTRYPOINT_EOF'
 #!/bin/sh
 set -e
@@ -69,27 +69,16 @@ if check_ssl_certs; then
     touch "$SSL_ENABLED_FLAG"
 else
     echo "$(date): No valid SSL certificates found, using HTTP-only configuration..."
-    echo "$(date): Will watch for certificate creation..."
+    echo "$(date): Will poll for certificate creation every 30 seconds..."
 fi
 
-# Start certificate watcher in background
+# Start certificate polling in background (instead of inotifywait)
 (
     while true; do
-        # Wait for certificate directory to exist
-        SSL_DIR=$(dirname "$SSL_CERT_PATH")
-        if [ -d "$SSL_DIR" ]; then
-            # Watch for certificate changes
-            inotifywait -q -e create -e modify -e moved_to "$SSL_DIR" 2>/dev/null || sleep 30
-            
-            # Give certbot time to finish writing all files
-            sleep 5
-            
-            if check_ssl_certs; then
-                enable_ssl
-            fi
-        else
-            # Directory doesn't exist yet, wait and retry
-            sleep 30
+        sleep 30
+        
+        if check_ssl_certs; then
+            enable_ssl
         fi
     done
 ) &
