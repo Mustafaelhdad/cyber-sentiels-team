@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AuthToolController;
+use App\Http\Controllers\Api\AuthzToolController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
@@ -194,5 +195,38 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Testing
     Route::post('/test-flow', [AuthToolController::class, 'testFlow']);
+  });
+
+  // Authorization Tool routes (global, not project-scoped)
+  Route::prefix('authz-tool')->group(function () {
+    // Health and status
+    Route::get('/health', [AuthzToolController::class, 'health']);
+    Route::get('/stats', [AuthzToolController::class, 'stats']);
+
+    // Authorization operations
+    Route::post('/authorize', [AuthzToolController::class, 'checkAuthorization']);
+    Route::post('/privileges', [AuthzToolController::class, 'privileges']);
+
+    // User management
+    Route::get('/users', [AuthzToolController::class, 'listUsers']);
+    Route::post('/users', [AuthzToolController::class, 'createUser']);
+    Route::put('/users/{email}', [AuthzToolController::class, 'updateUser']);
+    Route::delete('/users/{email}', [AuthzToolController::class, 'deleteUser']);
+
+    // Roles and resources
+    Route::get('/roles', [AuthzToolController::class, 'roles']);
+    Route::get('/resources', [AuthzToolController::class, 'resources']);
+
+    // Credential verification
+    Route::post('/verify', [AuthzToolController::class, 'verify']);
+
+    // Logs
+    Route::get('/logs', [AuthzToolController::class, 'logs']);
+
+    // Utilities
+    Route::post('/password-strength', [AuthzToolController::class, 'passwordStrength']);
+
+    // Testing
+    Route::post('/test-flow', [AuthzToolController::class, 'testFlow']);
   });
 });

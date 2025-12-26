@@ -4,5 +4,8 @@ export { AuthToolStatsCard } from "./AuthToolStatsCard";
 export { AuthToolUsersList } from "./AuthToolUsersList";
 export { AuthToolTestPanel } from "./AuthToolTestPanel";
 export { AuthorizationPanel } from "./AuthorizationPanel";
+export { AuthzToolStatsCard } from "./AuthzToolStatsCard";
+export { AuthzToolUsersList } from "./AuthzToolUsersList";
+export { AuthzToolTestPanel } from "./AuthzToolTestPanel";
 export { AuditCompliancePanel } from "./AuditCompliancePanel";
 export { AccountProvisioningPanel } from "./AccountProvisioningPanel";

@@ -60,8 +60,8 @@ const tabs: Tab[] = [
       </svg>
     ),
     color: "purple",
-    description: "Role-based access control and permissions",
-    status: "coming-soon",
+    description: "RBAC & ABAC access control and permissions",
+    status: "active",
   },
   {
     id: "audit",
@@ -159,7 +159,7 @@ export function IamDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-3 p-4 rounded-lg transition-all ${
+                className={`relative flex items-center gap-3 p-4 rounded-lg transition-all cursor-pointer ${
                   isActive
                     ? `${colors.active} shadow-lg`
                     : `hover:${colors.bg} text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white`

@@ -94,6 +94,7 @@ services:
       - RASP_API_URL=http://rasp:9000
       - SIEM_API_URL=http://siem:5000
       - AUTH_API_URL=http://auth:5000
+      - AUTHZ_API_URL=http://authz:5001
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -148,6 +149,7 @@ services:
       - SIEM_API_URL=http://siem:5000
       - ZAP_API_URL=http://zap:8080
       - AUTH_API_URL=http://auth:5000
+      - AUTHZ_API_URL=http://authz:5001
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -358,6 +360,36 @@ services:
     restart: unless-stopped
 
   # ===================
+  # Authorization Service (RBAC/ABAC)
+  # ===================
+  authz:
+    build:
+      context: ./tools/Authorization
+      dockerfile: Dockerfile
+    container_name: sentinel_authz
+    environment:
+      - AUTHZ_HOST=0.0.0.0
+      - AUTHZ_PORT=5001
+      - AUTHZ_WORKERS=${AUTHZ_WORKERS:-2}
+      - AUTHZ_TIMEOUT=${AUTHZ_TIMEOUT:-60}
+      - AUTHZ_USER_FILE=/data/users.txt
+      - AUTHZ_LOG_FILE=/data/authorization.log
+      - AUTHZ_DEFAULT_GROUP=${AUTHZ_DEFAULT_GROUP:-general}
+      - AUTHZ_ADMIN_PIN=${AUTHZ_ADMIN_PIN:-1234}
+      - AUTHZ_DEBUG=${AUTHZ_DEBUG:-false}
+    volumes:
+      - authz_data:/data
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===================
   # OWASP ZAP (DAST Tool)
   # ===================
   zap:
@@ -434,4 +466,6 @@ volumes:
   siem_reports:
     driver: local
   auth_data:
+    driver: local
+  authz_data:
     driver: local

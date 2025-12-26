@@ -95,4 +95,15 @@ return [
     'timeout' => env('AUTH_TIMEOUT', 30),
   ],
 
+  /*
+    |--------------------------------------------------------------------------
+    | Authorization Tool Service Configuration
+    |--------------------------------------------------------------------------
+    */
+
+  'authz_tool' => [
+    'url' => env('AUTHZ_API_URL', 'http://authz:5001'),
+    'timeout' => env('AUTHZ_TIMEOUT', 30),
+  ],
+
 ];

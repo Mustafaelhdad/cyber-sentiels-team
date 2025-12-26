@@ -2363,3 +2363,459 @@ export function useAuthToolTestFlow() {
     },
   });
 }
+
+// ============================================================================
+// Authorization Tool Types
+// ============================================================================
+
+export interface AuthzToolHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+  health: {
+    status: string;
+    service: string;
+    timestamp: number;
+  } | null;
+}
+
+export interface AuthzToolStatsResponse {
+  service: string;
+  status: string;
+  total_users: number;
+  users_by_role: Record<string, number>;
+  users_by_group: Record<string, number>;
+  available_roles: string[];
+  available_policies: string[];
+  timestamp: number;
+}
+
+export interface AuthzToolUser {
+  email: string;
+  role: string;
+  group: string;
+}
+
+export interface AuthzToolUsersResponse {
+  users: AuthzToolUser[];
+  total: number;
+}
+
+export interface AuthzToolRole {
+  role: string;
+  privileges: string[];
+}
+
+export interface AuthzToolRolesResponse {
+  roles: AuthzToolRole[];
+  policies: string[];
+}
+
+export interface AuthzToolResource {
+  resource: string;
+  permissions: Record<string, string[]>;
+}
+
+export interface AuthzToolResourcesResponse {
+  resources: AuthzToolResource[];
+}
+
+export interface AuthzToolAuthorizeResponse {
+  authorized: boolean;
+  email: string;
+  role: string;
+  group: string;
+  action: string;
+  resource: string;
+  policy: string;
+  privileges: string[];
+  decision: string;
+}
+
+export interface AuthzToolPrivilegesResponse {
+  email: string;
+  role: string;
+  group: string;
+  policy: string;
+  privileges: string[];
+}
+
+export interface AuthzToolLogEntry {
+  timestamp: string;
+  email: string;
+  action: string;
+  resource: string;
+  decision: string;
+  policy: string;
+}
+
+export interface AuthzToolLogsResponse {
+  logs: AuthzToolLogEntry[];
+  total: number;
+}
+
+export interface AuthzToolPasswordStrengthResponse {
+  strength: "weak" | "medium" | "strong";
+  score: number;
+  issues: string[];
+}
+
+export interface AuthzToolCreateUserResponse {
+  success: boolean;
+  message: string;
+  email: string;
+  role: string;
+  group: string;
+}
+
+export interface AuthzToolVerifyResponse {
+  valid: boolean;
+  email: string;
+  role: string;
+  group: string;
+}
+
+export interface AuthzToolTestFlowResult {
+  create_user: { success: boolean; data?: unknown; error?: string } | null;
+  verify_credentials: {
+    success: boolean;
+    data?: unknown;
+    error?: string;
+  } | null;
+  get_privileges_rbac: { success: boolean; data?: unknown } | null;
+  get_privileges_abac: { success: boolean; data?: unknown } | null;
+  authorize_read: { success: boolean; data?: unknown } | null;
+  authorize_write: { success: boolean; data?: unknown } | null;
+  authorize_delete: { success: boolean; data?: unknown } | null;
+  overall_success: boolean;
+}
+
+export interface AuthzToolTestFlowResponse {
+  test_results: AuthzToolTestFlowResult;
+  overall_success: boolean;
+}
+
+// ============================================================================
+// Authorization Tool Query Keys
+// ============================================================================
+
+export const authzToolQueryKeys = {
+  all: ["authz-tool"] as const,
+  health: ["authz-tool", "health"] as const,
+  stats: ["authz-tool", "stats"] as const,
+  users: ["authz-tool", "users"] as const,
+  roles: ["authz-tool", "roles"] as const,
+  resources: ["authz-tool", "resources"] as const,
+  logs: ["authz-tool", "logs"] as const,
+};
+
+// ============================================================================
+// Authorization Tool Queries
+// ============================================================================
+
+/**
+ * Check Authorization Tool service health.
+ */
+export function useAuthzToolHealth() {
+  return useQuery({
+    queryKey: authzToolQueryKeys.health,
+    queryFn: () => apiFetch<AuthzToolHealthResponse>("/authz-tool/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch Authorization Tool statistics.
+ */
+export function useAuthzToolStats() {
+  return useQuery({
+    queryKey: authzToolQueryKeys.stats,
+    queryFn: () => apiFetch<AuthzToolStatsResponse>("/authz-tool/stats"),
+    staleTime: 1000 * 15, // 15 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch Authorization Tool users list.
+ */
+export function useAuthzToolUsers() {
+  return useQuery({
+    queryKey: authzToolQueryKeys.users,
+    queryFn: () => apiFetch<AuthzToolUsersResponse>("/authz-tool/users"),
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+/**
+ * Fetch Authorization Tool roles.
+ */
+export function useAuthzToolRoles() {
+  return useQuery({
+    queryKey: authzToolQueryKeys.roles,
+    queryFn: () => apiFetch<AuthzToolRolesResponse>("/authz-tool/roles"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch Authorization Tool resources.
+ */
+export function useAuthzToolResources() {
+  return useQuery({
+    queryKey: authzToolQueryKeys.resources,
+    queryFn: () =>
+      apiFetch<AuthzToolResourcesResponse>("/authz-tool/resources"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch Authorization Tool logs.
+ */
+export function useAuthzToolLogs(limit: number = 100) {
+  return useQuery({
+    queryKey: [...authzToolQueryKeys.logs, limit],
+    queryFn: () =>
+      apiFetch<AuthzToolLogsResponse>(`/authz-tool/logs?limit=${limit}`),
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+// ============================================================================
+// Authorization Tool Mutations
+// ============================================================================
+
+/**
+ * Authorize an action for a user.
+ */
+export function useAuthzToolAuthorize() {
+  return useMutation({
+    mutationFn: async (payload: {
+      email: string;
+      action?: string;
+      resource?: string;
+      policy?: string;
+      context?: Record<string, unknown>;
+    }) => {
+      const result = await authToolFetch<AuthzToolAuthorizeResponse>(
+        "/authz-tool/authorize",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Get privileges for a user.
+ */
+export function useAuthzToolPrivileges() {
+  return useMutation({
+    mutationFn: async (payload: {
+      email: string;
+      policy?: string;
+      context?: Record<string, unknown>;
+    }) => {
+      const result = await authToolFetch<AuthzToolPrivilegesResponse>(
+        "/authz-tool/privileges",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Create a new user in Authorization Tool.
+ */
+export function useAuthzToolCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      email: string;
+      password: string;
+      role?: string;
+      group?: string;
+    }) => {
+      const result = await authToolFetch<AuthzToolCreateUserResponse>(
+        "/authz-tool/users",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.users });
+    },
+  });
+}
+
+/**
+ * Update a user in Authorization Tool.
+ */
+export function useAuthzToolUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      email: string;
+      role?: string;
+      group?: string;
+      password?: string;
+    }) => {
+      const { email, ...data } = payload;
+      const result = await authToolFetch<{ success: boolean; message: string }>(
+        `/authz-tool/users/${encodeURIComponent(email)}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.users });
+    },
+  });
+}
+
+/**
+ * Delete a user from Authorization Tool.
+ */
+export function useAuthzToolDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const result = await authToolFetch<{ success: boolean; message: string }>(
+        `/authz-tool/users/${encodeURIComponent(email)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.users });
+    },
+  });
+}
+
+/**
+ * Verify user credentials.
+ */
+export function useAuthzToolVerify() {
+  return useMutation({
+    mutationFn: async (payload: { email: string; password: string }) => {
+      const result = await authToolFetch<AuthzToolVerifyResponse>(
+        "/authz-tool/verify",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Check password strength.
+ */
+export function useAuthzToolPasswordStrength() {
+  return useMutation({
+    mutationFn: async (password: string) => {
+      const result = await authToolFetch<AuthzToolPasswordStrengthResponse>(
+        "/authz-tool/password-strength",
+        {
+          method: "POST",
+          body: JSON.stringify({ password }),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+  });
+}
+
+/**
+ * Test the complete authorization flow.
+ */
+export function useAuthzToolTestFlow() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      email: string;
+      password: string;
+      role?: string;
+      group?: string;
+    }) => {
+      const result = await authToolFetch<AuthzToolTestFlowResponse>(
+        "/authz-tool/test-flow",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: authzToolQueryKeys.users });
+    },
+  });
+}
