@@ -46,8 +46,8 @@ services:
       dockerfile: Dockerfile
     container_name: sentinel_nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
       - certbot_www:/var/www/certbot:ro
       - certbot_certs:/etc/nginx/ssl:ro
