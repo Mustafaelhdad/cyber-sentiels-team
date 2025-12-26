@@ -86,7 +86,7 @@ services:
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - SESSION_DRIVER=redis
-      - WAF_BASE_URL=${WAF_BASE_URL:-https://cybersentinels.cloud}
+      - WAF_BASE_URL=${WAF_BASE_URL:-http://72.62.93.170}
       - WAF_MAP_FILE_PATH=/shared/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - ZAP_API_URL=http://zap:8080
