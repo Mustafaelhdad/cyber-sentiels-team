@@ -1,9 +1,9 @@
 # Nginx with embedded configuration for production
-FROM nginx:1.27-alpine
+# Using Debian-based image for better package availability
+FROM nginx:1.27
 
 # Install curl and openssl for healthcheck and certificate validation
-# Using specific version tag to avoid cache issues
-RUN apk --no-cache add curl openssl || (sleep 5 && apk --no-cache add curl openssl)
+RUN apt-get update && apt-get install -y --no-install-recommends curl openssl && rm -rf /var/lib/apt/lists/* || (sleep 5 && apk --no-cache add curl openssl)
 
 # Remove default config
 RUN rm /etc/nginx/conf.d/default.conf
