@@ -89,7 +89,7 @@ services:
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - ZAP_API_URL=http://127.0.0.1:8081
       - SAST_API_URL=http://127.0.0.1:8082
-      - RASP_API_URL=http://127.0.0.1:9000
+      - RASP_API_URL=http://127.0.0.1:9001
       - SIEM_API_URL=http://127.0.0.1:5051
       - AUTH_API_URL=http://127.0.0.1:5052
       - AUTHZ_API_URL=http://127.0.0.1:5053
@@ -143,7 +143,7 @@ services:
       - WAF_MAP_FILE_PATH=/tmp/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - SAST_API_URL=http://127.0.0.1:8082
-      - RASP_API_URL=http://127.0.0.1:9000
+      - RASP_API_URL=http://127.0.0.1:9001
       - SIEM_API_URL=http://127.0.0.1:5051
       - ZAP_API_URL=http://127.0.0.1:8081
       - AUTH_API_URL=http://127.0.0.1:5052
@@ -266,7 +266,7 @@ services:
     restart: unless-stopped
 
   # ===================
-  # RASP (Runtime App Self-Protection - Host Network - Port 9000)
+  # RASP (Runtime App Self-Protection - Host Network - Port 9001)
   # ===================
   rasp:
     build:
@@ -275,14 +275,14 @@ services:
     container_name: sentinel_rasp
     network_mode: host
     environment:
-      - RASP_PORT=9000
+      - RASP_PORT=9001
       - RASP_HOST=127.0.0.1
       - RASP_DB_PATH=/data/rasp_incidents.db
       - RASP_ENABLE_DEMO=${RASP_ENABLE_DEMO:-false}
     volumes:
       - rasp_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
