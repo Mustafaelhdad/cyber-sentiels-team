@@ -1,35 +1,36 @@
 # ===================
-# PRODUCTION DOCKER COMPOSE
+# PRODUCTION DOCKER COMPOSE (HOST NETWORK MODE)
 # ===================
-# For VPS deployment - no host volume mounts, all code embedded in images
+# For VPS deployment with broken Docker iptables.
+# All public-facing services use host network mode to bypass DNAT issues.
+# Internal services communicate via localhost ports.
 
 services:
   # ===================
-  # Flask WAF Proxy
+  # Flask WAF Proxy (Host Network)
   # ===================
   waf:
     build:
       context: ./tools/waf
       dockerfile: Dockerfile
     container_name: sentinel_waf_flask
+    network_mode: host
     environment:
-      - WAF_MAP_FILE=/shared/waf-map.json
-      - WAF_HOST=0.0.0.0
-      - WAF_PORT=5000
+      - WAF_MAP_FILE=/tmp/waf-map.json
+      - WAF_HOST=127.0.0.1
+      - WAF_PORT=5050
       - WAF_DEBUG=${WAF_DEBUG:-false}
       - WAF_PROXY_TIMEOUT=${WAF_PROXY_TIMEOUT:-30}
     volumes:
-      - waf_shared:/shared
+      - waf_shared:/tmp
       - waf_logs:/app/logs
-    networks:
-      - sentinel_net
     healthcheck:
       test:
         [
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5050/health')",
         ]
       interval: 30s
       timeout: 10s
@@ -38,34 +39,31 @@ services:
     restart: unless-stopped
 
   # ===================
-  # NGINX (Public Gateway)
+  # NGINX (Public Gateway - Host Network)
   # ===================
   nginx:
     build:
       context: ./infra/docker/nginx
       dockerfile: Dockerfile
     container_name: sentinel_nginx
-    ports:
-      - "80:80"
-      - "443:443"
+    network_mode: host
     volumes:
       - certbot_www:/var/www/certbot:ro
       - certbot_certs:/etc/nginx/ssl:ro
     depends_on:
       - backend
       - waf
-    networks:
-      - sentinel_net
     restart: unless-stopped
 
   # ===================
-  # BACKEND (Laravel PHP-FPM)
+  # BACKEND (Laravel PHP-FPM - Host Network)
   # ===================
   backend:
     build:
       context: .
       dockerfile: infra/docker/php/Dockerfile
     container_name: sentinel_backend
+    network_mode: host
     working_dir: /var/www/backend
     environment:
       - APP_NAME=Sentinel
@@ -76,26 +74,26 @@ services:
       - LOG_CHANNEL=stack
       - LOG_LEVEL=info
       - DB_CONNECTION=mysql
-      - DB_HOST=mysql
+      - DB_HOST=127.0.0.1
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-sentinel}
       - DB_USERNAME=${DB_USERNAME:-sentinel}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
+      - REDIS_HOST=127.0.0.1
       - REDIS_PORT=6379
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - SESSION_DRIVER=redis
       - WAF_BASE_URL=${WAF_BASE_URL:-https://cybersentinels.cloud}
-      - WAF_MAP_FILE_PATH=/shared/waf-map.json
+      - WAF_MAP_FILE_PATH=/tmp/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
-      - ZAP_API_URL=http://zap:8080
-      - SAST_API_URL=http://sast:8080
-      - RASP_API_URL=http://rasp:9000
-      - SIEM_API_URL=http://siem:5000
-      - AUTH_API_URL=http://auth:5000
-      - AUTHZ_API_URL=http://authz:5001
-      - PROVISION_API_URL=http://provision:5002
+      - ZAP_API_URL=http://127.0.0.1:8081
+      - SAST_API_URL=http://127.0.0.1:8082
+      - RASP_API_URL=http://127.0.0.1:9000
+      - SIEM_API_URL=http://127.0.0.1:5051
+      - AUTH_API_URL=http://127.0.0.1:5052
+      - AUTHZ_API_URL=http://127.0.0.1:5053
+      - PROVISION_API_URL=http://127.0.0.1:5054
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -109,23 +107,22 @@ services:
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
-      - waf_shared:/shared
+      - waf_shared:/tmp
       - waf_logs:/var/log/waf:ro
     depends_on:
       - mysql
       - redis
-    networks:
-      - sentinel_net
     restart: unless-stopped
 
   # ===================
-  # QUEUE WORKER (Laravel Horizon)
+  # QUEUE WORKER (Laravel Horizon - Host Network)
   # ===================
   queue:
     build:
       context: .
       dockerfile: infra/docker/php/Dockerfile
     container_name: sentinel_queue
+    network_mode: host
     working_dir: /var/www/backend
     command: php artisan horizon
     environment:
@@ -134,24 +131,24 @@ services:
       - APP_KEY=${APP_KEY:-base64:vSvZE7y8wV6beMhp/aMaJgCvdEncsgPvb8ogyDMp7p4=}
       - APP_DEBUG=${APP_DEBUG:-false}
       - DB_CONNECTION=mysql
-      - DB_HOST=mysql
+      - DB_HOST=127.0.0.1
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-sentinel}
       - DB_USERNAME=${DB_USERNAME:-sentinel}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
+      - REDIS_HOST=127.0.0.1
       - REDIS_PORT=6379
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
-      - WAF_MAP_FILE_PATH=/shared/waf-map.json
+      - WAF_MAP_FILE_PATH=/tmp/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
-      - SAST_API_URL=http://sast:8080
-      - RASP_API_URL=http://rasp:9000
-      - SIEM_API_URL=http://siem:5000
-      - ZAP_API_URL=http://zap:8080
-      - AUTH_API_URL=http://auth:5000
-      - AUTHZ_API_URL=http://authz:5001
-      - PROVISION_API_URL=http://provision:5002
+      - SAST_API_URL=http://127.0.0.1:8082
+      - RASP_API_URL=http://127.0.0.1:9000
+      - SIEM_API_URL=http://127.0.0.1:5051
+      - ZAP_API_URL=http://127.0.0.1:8081
+      - AUTH_API_URL=http://127.0.0.1:5052
+      - AUTHZ_API_URL=http://127.0.0.1:5053
+      - PROVISION_API_URL=http://127.0.0.1:5054
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -165,24 +162,23 @@ services:
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
-      - waf_shared:/shared
+      - waf_shared:/tmp
       - waf_logs:/var/log/waf:ro
     depends_on:
       - mysql
       - redis
       - backend
-    networks:
-      - sentinel_net
     restart: unless-stopped
 
   # ===================
-  # SCHEDULER (Laravel Cron)
+  # SCHEDULER (Laravel Cron - Host Network)
   # ===================
   scheduler:
     build:
       context: .
       dockerfile: infra/docker/php/Dockerfile
     container_name: sentinel_scheduler
+    network_mode: host
     working_dir: /var/www/backend
     command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
     environment:
@@ -191,36 +187,35 @@ services:
       - APP_KEY=${APP_KEY:-base64:vSvZE7y8wV6beMhp/aMaJgCvdEncsgPvb8ogyDMp7p4=}
       - APP_DEBUG=${APP_DEBUG:-false}
       - DB_CONNECTION=mysql
-      - DB_HOST=mysql
+      - DB_HOST=127.0.0.1
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-sentinel}
       - DB_USERNAME=${DB_USERNAME:-sentinel}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
-      - REDIS_HOST=redis
+      - REDIS_HOST=127.0.0.1
       - REDIS_PORT=6379
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
-      - WAF_MAP_FILE_PATH=/shared/waf-map.json
+      - WAF_MAP_FILE_PATH=/tmp/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
     volumes:
       - laravel_storage:/var/www/backend/storage
       - reports_artifacts:/var/www/backend/storage/app/reports
-      - waf_shared:/shared
+      - waf_shared:/tmp
       - waf_logs:/var/log/waf:ro
     depends_on:
       - mysql
       - redis
       - backend
-    networks:
-      - sentinel_net
     restart: unless-stopped
 
   # ===================
-  # MYSQL
+  # MYSQL (Host Network)
   # ===================
   mysql:
     image: mysql:8.0
     container_name: sentinel_mysql
+    network_mode: host
     environment:
       - MYSQL_DATABASE=${DB_DATABASE:-sentinel}
       - MYSQL_USER=${DB_USERNAME:-sentinel}
@@ -228,44 +223,42 @@ services:
       - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootsecret}
     volumes:
       - mysql_data:/var/lib/mysql
-    networks:
-      - sentinel_net
     restart: unless-stopped
 
   # ===================
-  # REDIS
+  # REDIS (Host Network)
   # ===================
   redis:
     image: redis:7-alpine
     container_name: sentinel_redis
-    command: redis-server --appendonly yes
+    network_mode: host
+    command: redis-server --appendonly yes --bind 127.0.0.1
     volumes:
       - redis_data:/data
-    networks:
-      - sentinel_net
     restart: unless-stopped
 
   # ===================
-  # SAST Scanner
+  # SAST Scanner (Host Network - Port 8082)
   # ===================
   sast:
     build:
       context: ./tools/dast_and_sast
       dockerfile: Dockerfile
     container_name: sentinel_sast
+    network_mode: host
     environment:
       - SAST_RULES_FILE=/app/config/sast_rules.yaml
       - SAST_OUTPUT_DIR=/app/output
       - SAST_SCANS_DIR=/app/scans
       - MAX_UPLOAD_SIZE=${SAST_MAX_UPLOAD_SIZE:-104857600}
+      - SAST_HOST=127.0.0.1
+      - SAST_PORT=8082
     volumes:
       - sast_output:/app/output
       - sast_scans:/app/scans
       - reports_artifacts:/app/reports:rw
-    networks:
-      - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8082/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -273,24 +266,23 @@ services:
     restart: unless-stopped
 
   # ===================
-  # RASP (Runtime App Self-Protection)
+  # RASP (Runtime App Self-Protection - Host Network - Port 9000)
   # ===================
   rasp:
     build:
       context: ./tools/RASP
       dockerfile: Dockerfile
     container_name: sentinel_rasp
+    network_mode: host
     environment:
       - RASP_PORT=9000
-      - RASP_HOST=0.0.0.0
+      - RASP_HOST=127.0.0.1
       - RASP_DB_PATH=/data/rasp_incidents.db
       - RASP_ENABLE_DEMO=${RASP_ENABLE_DEMO:-false}
     volumes:
       - rasp_data:/data
-    networks:
-      - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -298,16 +290,17 @@ services:
     restart: unless-stopped
 
   # ===================
-  # SIEM (Security Information & Event Management)
+  # SIEM (Security Information & Event Management - Host Network - Port 5051)
   # ===================
   siem:
     build:
       context: ./tools/siem
       dockerfile: Dockerfile
     container_name: sentinel_siem
+    network_mode: host
     environment:
-      - SIEM_HOST=0.0.0.0
-      - SIEM_PORT=5000
+      - SIEM_HOST=127.0.0.1
+      - SIEM_PORT=5051
       - SIEM_WORKERS=${SIEM_WORKERS:-2}
       - SIEM_TIMEOUT=${SIEM_TIMEOUT:-120}
       - SIEM_SECRET_KEY=${SIEM_SECRET_KEY:-change-this-in-production}
@@ -319,10 +312,8 @@ services:
       - siem_logs:/app/logs
       - siem_uploads:/app/uploads
       - siem_reports:/app/reports
-    networks:
-      - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/stats"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5051/stats"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -330,16 +321,17 @@ services:
     restart: unless-stopped
 
   # ===================
-  # Authentication Service
+  # Authentication Service (Host Network - Port 5052)
   # ===================
   auth:
     build:
       context: ./tools/Authentication
       dockerfile: Dockerfile
     container_name: sentinel_auth
+    network_mode: host
     environment:
-      - AUTH_HOST=0.0.0.0
-      - AUTH_PORT=5000
+      - AUTH_HOST=127.0.0.1
+      - AUTH_PORT=5052
       # Using 1 worker because sessions are stored in-memory
       # Multiple workers would cause session lookup failures
       - AUTH_WORKERS=${AUTH_WORKERS:-1}
@@ -351,10 +343,8 @@ services:
       - AUTH_DEBUG=${AUTH_DEBUG:-false}
     volumes:
       - auth_data:/data
-    networks:
-      - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5052/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -362,16 +352,17 @@ services:
     restart: unless-stopped
 
   # ===================
-  # Authorization Service (RBAC/ABAC)
+  # Authorization Service (RBAC/ABAC - Host Network - Port 5053)
   # ===================
   authz:
     build:
       context: ./tools/Authorization
       dockerfile: Dockerfile
     container_name: sentinel_authz
+    network_mode: host
     environment:
-      - AUTHZ_HOST=0.0.0.0
-      - AUTHZ_PORT=5001
+      - AUTHZ_HOST=127.0.0.1
+      - AUTHZ_PORT=5053
       - AUTHZ_WORKERS=${AUTHZ_WORKERS:-2}
       - AUTHZ_TIMEOUT=${AUTHZ_TIMEOUT:-60}
       - AUTHZ_USER_FILE=/data/users.txt
@@ -381,10 +372,8 @@ services:
       - AUTHZ_DEBUG=${AUTHZ_DEBUG:-false}
     volumes:
       - authz_data:/data
-    networks:
-      - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5053/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -392,16 +381,17 @@ services:
     restart: unless-stopped
 
   # ===================
-  # Account Provisioning Service (IAM)
+  # Account Provisioning Service (IAM - Host Network - Port 5054)
   # ===================
   provision:
     build:
       context: ./tools/account_provisioning_tool
       dockerfile: Dockerfile
     container_name: sentinel_provision
+    network_mode: host
     environment:
-      - PROVISION_HOST=0.0.0.0
-      - PROVISION_PORT=5002
+      - PROVISION_HOST=127.0.0.1
+      - PROVISION_PORT=5054
       - PROVISION_WORKERS=${PROVISION_WORKERS:-2}
       - PROVISION_TIMEOUT=${PROVISION_TIMEOUT:-60}
       - PROVISION_DB_PATH=/data/users.db
@@ -409,10 +399,8 @@ services:
       - PROVISION_DEBUG=${PROVISION_DEBUG:-false}
     volumes:
       - provision_data:/data
-    networks:
-      - sentinel_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5054/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -420,12 +408,13 @@ services:
     restart: unless-stopped
 
   # ===================
-  # OWASP ZAP (DAST Tool)
+  # OWASP ZAP (DAST Tool - Host Network - Port 8081)
   # ===================
   zap:
     image: ghcr.io/zaproxy/zaproxy:stable
     container_name: sentinel_zap
-    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.disablekey=true
+    network_mode: host
+    command: zap.sh -daemon -host 127.0.0.1 -port 8081 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.disablekey=true
     mem_limit: 3g
     cpus: "1.5"
     pids_limit: 512
@@ -433,11 +422,9 @@ services:
       - JAVA_OPTS=-Xmx2048m
     volumes:
       - zap_data:/zap/wrk
-    networks:
-      - sentinel_net
     healthcheck:
       test:
-        ["CMD", "curl", "-f", "http://localhost:8080/JSON/core/view/version/"]
+        ["CMD", "curl", "-f", "http://127.0.0.1:8081/JSON/core/view/version/"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -445,16 +432,16 @@ services:
     restart: unless-stopped
 
   # ===================
-  # CERTBOT (SSL Certificate Management)
+  # CERTBOT (SSL Certificate Management - Host Network)
   # ===================
   # This container handles SSL certificate issuance and renewal.
   # - Only issues new certs if they don't exist
   # - Only renews if certs are within 30 days of expiry (certbot's default)
   # - Checks every 12 hours but won't renew unless needed
-  # - Reloads nginx after successful renewal
   certbot:
     image: certbot/certbot:latest
     container_name: sentinel_certbot
+    network_mode: host
     volumes:
       - certbot_www:/var/www/certbot:rw
       - certbot_certs:/etc/letsencrypt:rw
@@ -531,15 +518,11 @@ services:
           sleep 12h & wait $${!};
         done
       '
-    networks:
-      - sentinel_net
     depends_on:
       - nginx
     restart: unless-stopped
 
-networks:
-  sentinel_net:
-    driver: bridge
+# No networks needed - all services use host network
 
 volumes:
   mysql_data:

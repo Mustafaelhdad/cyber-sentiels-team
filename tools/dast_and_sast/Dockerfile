@@ -45,15 +45,19 @@ RUN useradd -m -u 1000 scanner && \
     chown -R scanner:scanner /app
 USER scanner
 
+# Port configuration (default 8080, can be overridden)
+ENV SAST_HOST=0.0.0.0
+ENV SAST_PORT=8080
+
 # Expose API port
 EXPOSE 8080
 
-# Health check
+# Health check - uses env var port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:${SAST_PORT}/health || exit 1
 
-# Default command - run API server
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "300", "api_server:app"]
+# Default command - run API server with configurable host/port
+CMD gunicorn --bind ${SAST_HOST}:${SAST_PORT} --workers 2 --timeout 300 api_server:app
 
 # Alternative: Run CLI scan directly
 # docker run -v /path/to/source:/scan sast-scanner python main.py sast -d /scan -o /app/output/report.json
