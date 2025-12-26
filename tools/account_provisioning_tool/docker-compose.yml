@@ -1,0 +1,56 @@
+# Cyber Sentinels Account Provisioning Tool
+# Docker Compose configuration for full stack deployment
+
+version: "3.8"
+
+services:
+  # Backend API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyber-sentinels-provisioning-api
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    volumes:
+      - provisioning-data:/data
+    environment:
+      - PROVISION_HOST=0.0.0.0
+      - PROVISION_PORT=5002
+      - PROVISION_DB_PATH=/data/users.db
+      - PROVISION_REPORTS_DIR=/data/reports
+      - PROVISION_DEBUG=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cyber-sentinels-net
+
+  # Frontend Web Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=
+    container_name: cyber-sentinels-provisioning-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - cyber-sentinels-net
+
+volumes:
+  provisioning-data:
+    driver: local
+
+networks:
+  cyber-sentinels-net:
+    driver: bridge

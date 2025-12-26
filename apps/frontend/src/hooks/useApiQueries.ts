@@ -2819,3 +2819,492 @@ export function useAuthzToolTestFlow() {
     },
   });
 }
+
+// ============================================================================
+// Account Provisioning Tool Types
+// ============================================================================
+
+export interface ProvisionUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProvisionUsersResponse {
+  users: ProvisionUser[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+export interface ProvisionAuditEntry {
+  id: number;
+  action: string;
+  username: string;
+  details: string;
+  performed_by: string;
+  created_at: string;
+}
+
+export interface ProvisionAuditResponse {
+  logs: ProvisionAuditEntry[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+export interface ProvisionStatsResponse {
+  service: string;
+  status: string;
+  total_users: number;
+  users_by_status: Record<string, number>;
+  users_by_role: Record<string, number>;
+  audit_actions: Record<string, number>;
+  recent_activity_24h: number;
+  available_roles: string[];
+  available_statuses: string[];
+  timestamp: number;
+}
+
+export interface ProvisionReportResponse {
+  title: string;
+  generated_at: string;
+  summary: {
+    total_users: number;
+    active_users: number;
+    disabled_users: number;
+  };
+  activities: {
+    accounts_created: number;
+    accounts_modified: number;
+    accounts_disabled: number;
+    accounts_enabled: number;
+    accounts_deleted: number;
+  };
+}
+
+export interface ProvisionHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+  health: {
+    status: string;
+    service: string;
+    timestamp: number;
+  } | null;
+}
+
+export interface ProvisionCreateUserResponse {
+  success: boolean;
+  message: string;
+  user: ProvisionUser;
+}
+
+export interface ProvisionUpdateUserResponse {
+  success: boolean;
+  message: string;
+  user: ProvisionUser;
+}
+
+export interface ProvisionDeleteUserResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ProvisionBulkResponse {
+  success: boolean;
+  message: string;
+  created: number;
+  failed: number;
+  results: {
+    success: Array<{
+      id: number;
+      username: string;
+      email: string;
+      role: string;
+      status: string;
+    }>;
+    failed: Array<{
+      username: string;
+      error: string;
+    }>;
+  };
+}
+
+export interface ProvisionRolesResponse {
+  roles: string[];
+}
+
+export interface ProvisionStatusesResponse {
+  statuses: string[];
+}
+
+// ============================================================================
+// Account Provisioning Tool Query Keys
+// ============================================================================
+
+export const provisionToolQueryKeys = {
+  all: ["provision-tool"] as const,
+  health: ["provision-tool", "health"] as const,
+  stats: ["provision-tool", "stats"] as const,
+  report: ["provision-tool", "report"] as const,
+  users: (filters?: Record<string, string | number>) =>
+    ["provision-tool", "users", filters ?? {}] as const,
+  user: (id: number) => ["provision-tool", "user", id] as const,
+  audit: (filters?: Record<string, string | number>) =>
+    ["provision-tool", "audit", filters ?? {}] as const,
+  roles: ["provision-tool", "roles"] as const,
+  statuses: ["provision-tool", "statuses"] as const,
+};
+
+// ============================================================================
+// Account Provisioning Tool Queries
+// ============================================================================
+
+/**
+ * Check Account Provisioning Tool service health.
+ */
+export function useProvisionToolHealth() {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.health,
+    queryFn: () => apiFetch<ProvisionHealthResponse>("/provision-tool/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch Account Provisioning Tool statistics.
+ */
+export function useProvisionToolStats() {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.stats,
+    queryFn: () => apiFetch<ProvisionStatsResponse>("/provision-tool/stats"),
+    staleTime: 1000 * 15, // 15 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch Account Provisioning Tool report.
+ */
+export function useProvisionToolReport() {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.report,
+    queryFn: () => apiFetch<ProvisionReportResponse>("/provision-tool/report"),
+    staleTime: 1000 * 30, // 30 seconds
+  });
+}
+
+/**
+ * Fetch Account Provisioning Tool users list.
+ */
+export function useProvisionToolUsers(filters?: {
+  status?: string;
+  role?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+}) {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.users(filters),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, String(value));
+          }
+        });
+      }
+      const queryString = params.toString();
+      return apiFetch<ProvisionUsersResponse>(
+        `/provision-tool/users${queryString ? `?${queryString}` : ""}`
+      );
+    },
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch a single user by ID.
+ */
+export function useProvisionToolUser(userId: number | undefined) {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.user(userId ?? 0),
+    queryFn: () => apiFetch<ProvisionUser>(`/provision-tool/users/${userId}`),
+    enabled: !!userId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+/**
+ * Fetch Account Provisioning Tool audit log.
+ */
+export function useProvisionToolAudit(filters?: {
+  action?: string;
+  username?: string;
+  page?: number;
+  per_page?: number;
+}) {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.audit(filters),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, String(value));
+          }
+        });
+      }
+      const queryString = params.toString();
+      return apiFetch<ProvisionAuditResponse>(
+        `/provision-tool/audit${queryString ? `?${queryString}` : ""}`
+      );
+    },
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch available roles.
+ */
+export function useProvisionToolRoles() {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.roles,
+    queryFn: () => apiFetch<ProvisionRolesResponse>("/provision-tool/roles"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Fetch available statuses.
+ */
+export function useProvisionToolStatuses() {
+  return useQuery({
+    queryKey: provisionToolQueryKeys.statuses,
+    queryFn: () =>
+      apiFetch<ProvisionStatusesResponse>("/provision-tool/statuses"),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// ============================================================================
+// Account Provisioning Tool Mutations
+// ============================================================================
+
+/**
+ * Create a new user in Account Provisioning Tool.
+ */
+export function useProvisionToolCreateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      username: string;
+      email: string;
+      role?: string;
+      status?: string;
+      performed_by?: string;
+    }) => {
+      const result = await authToolFetch<ProvisionCreateUserResponse>(
+        "/provision-tool/users",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+    },
+  });
+}
+
+/**
+ * Update an existing user.
+ */
+export function useProvisionToolUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      id: number;
+      username?: string;
+      email?: string;
+      role?: string;
+      status?: string;
+      performed_by?: string;
+    }) => {
+      const { id, ...data } = payload;
+      const result = await authToolFetch<ProvisionUpdateUserResponse>(
+        `/provision-tool/users/${id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+    },
+  });
+}
+
+/**
+ * Delete a user.
+ */
+export function useProvisionToolDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: number) => {
+      const result = await authToolFetch<ProvisionDeleteUserResponse>(
+        `/provision-tool/users/${userId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+    },
+  });
+}
+
+/**
+ * Disable a user.
+ */
+export function useProvisionToolDisableUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { userId: number; performed_by?: string }) => {
+      const result = await authToolFetch<{ success: boolean; message: string }>(
+        `/provision-tool/users/${payload.userId}/disable`,
+        {
+          method: "POST",
+          body: JSON.stringify({ performed_by: payload.performed_by }),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+    },
+  });
+}
+
+/**
+ * Enable a user.
+ */
+export function useProvisionToolEnableUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { userId: number; performed_by?: string }) => {
+      const result = await authToolFetch<{ success: boolean; message: string }>(
+        `/provision-tool/users/${payload.userId}/enable`,
+        {
+          method: "POST",
+          body: JSON.stringify({ performed_by: payload.performed_by }),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+    },
+  });
+}
+
+/**
+ * Bulk provision multiple users.
+ */
+export function useProvisionToolBulkCreate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      users: Array<{
+        username: string;
+        email: string;
+        role?: string;
+        status?: string;
+      }>;
+      performed_by?: string;
+    }) => {
+      const result = await authToolFetch<ProvisionBulkResponse>(
+        "/provision-tool/users/bulk",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
+      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+    },
+  });
+}

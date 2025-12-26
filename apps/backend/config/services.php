@@ -106,4 +106,15 @@ return [
     'timeout' => env('AUTHZ_TIMEOUT', 30),
   ],
 
+  /*
+    |--------------------------------------------------------------------------
+    | Account Provisioning Tool Service Configuration
+    |--------------------------------------------------------------------------
+    */
+
+  'provision_tool' => [
+    'url' => env('PROVISION_API_URL', 'http://provision:5002'),
+    'timeout' => env('PROVISION_TIMEOUT', 30),
+  ],
+
 ];

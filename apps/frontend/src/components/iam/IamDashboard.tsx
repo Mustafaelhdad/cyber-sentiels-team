@@ -107,7 +107,7 @@ const tabs: Tab[] = [
     ),
     color: "cyan",
     description: "Automated user lifecycle management",
-    status: "coming-soon",
+    status: "active",
   },
 ];
 

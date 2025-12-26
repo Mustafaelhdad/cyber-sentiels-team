@@ -9,3 +9,6 @@ export { AuthzToolUsersList } from "./AuthzToolUsersList";
 export { AuthzToolTestPanel } from "./AuthzToolTestPanel";
 export { AuditCompliancePanel } from "./AuditCompliancePanel";
 export { AccountProvisioningPanel } from "./AccountProvisioningPanel";
+export { ProvisionStatsCard } from "./ProvisionStatsCard";
+export { ProvisionUsersList } from "./ProvisionUsersList";
+export { ProvisionAuditLog } from "./ProvisionAuditLog";

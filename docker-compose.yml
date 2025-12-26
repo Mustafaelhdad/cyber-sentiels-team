@@ -86,7 +86,7 @@ services:
       - CACHE_DRIVER=redis
       - QUEUE_CONNECTION=redis
       - SESSION_DRIVER=redis
-        - WAF_BASE_URL=${WAF_BASE_URL:-https://cybersentinels.cloud}
+      - WAF_BASE_URL=${WAF_BASE_URL:-https://cybersentinels.cloud}
       - WAF_MAP_FILE_PATH=/shared/waf-map.json
       - WAF_LOG_FILE=/var/log/waf/suspicious.log
       - ZAP_API_URL=http://zap:8080
@@ -95,6 +95,7 @@ services:
       - SIEM_API_URL=http://siem:5000
       - AUTH_API_URL=http://auth:5000
       - AUTHZ_API_URL=http://authz:5001
+      - PROVISION_API_URL=http://provision:5002
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -150,6 +151,7 @@ services:
       - ZAP_API_URL=http://zap:8080
       - AUTH_API_URL=http://auth:5000
       - AUTHZ_API_URL=http://authz:5001
+      - PROVISION_API_URL=http://provision:5002
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -390,6 +392,34 @@ services:
     restart: unless-stopped
 
   # ===================
+  # Account Provisioning Service (IAM)
+  # ===================
+  provision:
+    build:
+      context: ./tools/account_provisioning_tool
+      dockerfile: Dockerfile
+    container_name: sentinel_provision
+    environment:
+      - PROVISION_HOST=0.0.0.0
+      - PROVISION_PORT=5002
+      - PROVISION_WORKERS=${PROVISION_WORKERS:-2}
+      - PROVISION_TIMEOUT=${PROVISION_TIMEOUT:-60}
+      - PROVISION_DB_PATH=/data/users.db
+      - PROVISION_REPORTS_DIR=/data/reports
+      - PROVISION_DEBUG=${PROVISION_DEBUG:-false}
+    volumes:
+      - provision_data:/data
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===================
   # OWASP ZAP (DAST Tool)
   # ===================
   zap:
@@ -468,4 +498,6 @@ volumes:
   auth_data:
     driver: local
   authz_data:
+    driver: local
+  provision_data:
     driver: local

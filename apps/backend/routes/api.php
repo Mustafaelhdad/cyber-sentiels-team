@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AuthToolController;
 use App\Http\Controllers\Api\AuthzToolController;
+use App\Http\Controllers\Api\ProvisionToolController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RunController;
@@ -228,5 +229,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Testing
     Route::post('/test-flow', [AuthzToolController::class, 'testFlow']);
+  });
+
+  // Account Provisioning Tool routes (global, not project-scoped)
+  Route::prefix('provision-tool')->group(function () {
+    // Health and status
+    Route::get('/health', [ProvisionToolController::class, 'health']);
+    Route::get('/stats', [ProvisionToolController::class, 'stats']);
+    Route::get('/report', [ProvisionToolController::class, 'report']);
+
+    // User management
+    Route::get('/users', [ProvisionToolController::class, 'listUsers']);
+    Route::post('/users', [ProvisionToolController::class, 'createUser']);
+    Route::get('/users/{id}', [ProvisionToolController::class, 'getUser']);
+    Route::put('/users/{id}', [ProvisionToolController::class, 'updateUser']);
+    Route::delete('/users/{id}', [ProvisionToolController::class, 'deleteUser']);
+    Route::post('/users/{id}/disable', [ProvisionToolController::class, 'disableUser']);
+    Route::post('/users/{id}/enable', [ProvisionToolController::class, 'enableUser']);
+    Route::post('/users/bulk', [ProvisionToolController::class, 'bulkCreate']);
+
+    // Audit log
+    Route::get('/audit', [ProvisionToolController::class, 'audit']);
+
+    // Metadata
+    Route::get('/roles', [ProvisionToolController::class, 'roles']);
+    Route::get('/statuses', [ProvisionToolController::class, 'statuses']);
   });
 });
