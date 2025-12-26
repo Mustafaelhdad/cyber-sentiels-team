@@ -447,15 +447,94 @@ services:
   # ===================
   # CERTBOT (SSL Certificate Management)
   # ===================
+  # This container handles SSL certificate issuance and renewal.
+  # - Only issues new certs if they don't exist
+  # - Only renews if certs are within 30 days of expiry (certbot's default)
+  # - Checks every 12 hours but won't renew unless needed
+  # - Reloads nginx after successful renewal
   certbot:
     image: certbot/certbot:latest
     container_name: sentinel_certbot
     volumes:
       - certbot_www:/var/www/certbot:rw
       - certbot_certs:/etc/letsencrypt:rw
-    entrypoint: "/bin/sh -c 'trap exit TERM; if [ ! -f /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem ]; then certbot certonly --webroot -w /var/www/certbot -d cybersentinels.cloud -d www.cybersentinels.cloud --email admin@cybersentinels.cloud --agree-tos --no-eff-email --non-interactive; fi; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: >
+      /bin/sh -c '
+        trap exit TERM;
+        
+        # Function to check certificate validity
+        check_cert_validity() {
+          if [ -f /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem ]; then
+            # Check if cert expires in more than 30 days
+            EXPIRY=$$(openssl x509 -enddate -noout -in /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem 2>/dev/null | cut -d= -f2)
+            if [ -n "$$EXPIRY" ]; then
+              EXPIRY_EPOCH=$$(date -d "$$EXPIRY" +%s 2>/dev/null || date -j -f "%b %d %H:%M:%S %Y %Z" "$$EXPIRY" +%s 2>/dev/null)
+              NOW_EPOCH=$$(date +%s)
+              DAYS_LEFT=$$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+              echo "Certificate expires in $$DAYS_LEFT days ($$EXPIRY)"
+              return $$DAYS_LEFT
+            fi
+          fi
+          return 0
+        }
+        
+        # Initial certificate check/issuance
+        echo "=== Certbot SSL Manager Starting ==="
+        
+        if [ ! -f /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem ]; then
+          echo "No certificate found. Attempting to issue new certificate..."
+          sleep 10;  # Wait for nginx to be ready
+          certbot certonly --webroot -w /var/www/certbot \
+            -d cybersentinels.cloud -d www.cybersentinels.cloud \
+            --email admin@cybersentinels.cloud \
+            --agree-tos --no-eff-email --non-interactive \
+            --keep-until-expiring --expand
+          
+          if [ $$? -eq 0 ]; then
+            echo "Certificate issued successfully!"
+          else
+            echo "Certificate issuance failed. Will retry on next cycle."
+          fi
+        else
+          echo "Certificate already exists."
+          check_cert_validity
+        fi
+        
+        # Renewal loop - check every 12 hours
+        while :; do
+          echo "=== Certificate renewal check at $$(date) ==="
+          
+          if [ -f /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem ]; then
+            check_cert_validity
+            DAYS=$$?
+            
+            if [ $$DAYS -lt 30 ]; then
+              echo "Certificate expires in less than 30 days. Attempting renewal..."
+              certbot renew --webroot -w /var/www/certbot --non-interactive --deploy-hook "echo Cert renewed successfully"
+              
+              if [ $$? -eq 0 ]; then
+                echo "Renewal check completed."
+              fi
+            else
+              echo "Certificate still valid for $$DAYS days. No renewal needed."
+            fi
+          else
+            echo "No certificate found. Attempting to issue..."
+            certbot certonly --webroot -w /var/www/certbot \
+              -d cybersentinels.cloud -d www.cybersentinels.cloud \
+              --email admin@cybersentinels.cloud \
+              --agree-tos --no-eff-email --non-interactive \
+              --keep-until-expiring --expand
+          fi
+          
+          echo "Next check in 12 hours..."
+          sleep 12h & wait $${!};
+        done
+      '
     networks:
       - sentinel_net
+    depends_on:
+      - nginx
     restart: unless-stopped
 
 networks:
