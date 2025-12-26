@@ -39,14 +39,9 @@ export function AuthzToolTestPanel() {
     "guest",
   ];
 
-  const availableResources = resourcesData?.resources?.map((r) => r.resource) || [
-    "dashboard",
-    "reports",
-    "users",
-    "settings",
-    "logs",
-    "security",
-  ];
+  const availableResources = resourcesData?.resources?.map(
+    (r) => r.resource
+  ) || ["dashboard", "reports", "users", "settings", "logs", "security"];
 
   const handleAuthorize = async () => {
     if (!email) return;
@@ -198,7 +193,11 @@ export function AuthzToolTestPanel() {
             >
               {authorizeMutation.isPending ? (
                 <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
                     <circle
                       className="opacity-25"
                       cx="12"
@@ -217,7 +216,12 @@ export function AuthzToolTestPanel() {
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -288,7 +292,8 @@ export function AuthzToolTestPanel() {
                       {authorizeMutation.data.decision}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {authorizeMutation.data.email} → {authorizeMutation.data.action} on{" "}
+                      {authorizeMutation.data.email} →{" "}
+                      {authorizeMutation.data.action} on{" "}
                       {authorizeMutation.data.resource}
                     </p>
                   </div>
@@ -313,7 +318,9 @@ export function AuthzToolTestPanel() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500 dark:text-gray-400">Privileges</p>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Privileges
+                    </p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {authorizeMutation.data.privileges.join(", ") || "none"}
                     </p>
@@ -405,7 +412,9 @@ export function AuthzToolTestPanel() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400 mb-2">Privileges</p>
+                  <p className="text-gray-500 dark:text-gray-400 mb-2">
+                    Privileges
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {privilegesMutation.data.privileges.length > 0 ? (
                       privilegesMutation.data.privileges.map((priv) => (
@@ -417,7 +426,9 @@ export function AuthzToolTestPanel() {
                         </span>
                       ))
                     ) : (
-                      <span className="text-gray-500 dark:text-gray-400">No privileges</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        No privileges
+                      </span>
                     )}
                   </div>
                 </div>
@@ -435,8 +446,8 @@ export function AuthzToolTestPanel() {
         {mode === "auto" && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Run an automated test of the complete authorization flow (create user → verify →
-              check privileges → authorize actions).
+              Run an automated test of the complete authorization flow (create
+              user → verify → check privileges → authorize actions).
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -501,7 +512,11 @@ export function AuthzToolTestPanel() {
             >
               {testFlowMutation.isPending ? (
                 <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
                     <circle
                       className="opacity-25"
                       cx="12"
@@ -520,7 +535,12 @@ export function AuthzToolTestPanel() {
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -556,28 +576,40 @@ export function AuthzToolTestPanel() {
                 </h4>
 
                 <div className="space-y-2 text-sm">
-                  {Object.entries(testFlowMutation.data.test_results).map(([key, value]) => {
-                    if (key === "overall_success") return null;
-                    const result = value as { success?: boolean; data?: { authorized?: boolean } } | null;
-                    const isAuthResult = key.startsWith("authorize_");
-                    const passed = isAuthResult
-                      ? result?.data?.authorized
-                      : result?.success;
-                    return (
-                      <div key={key} className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400 capitalize">
-                          {key.replace(/_/g, " ")}
-                        </span>
-                        {passed ? (
-                          <span className="text-emerald-600 dark:text-emerald-400">✓ Pass</span>
-                        ) : result === null ? (
-                          <span className="text-gray-400">—</span>
-                        ) : (
-                          <span className="text-red-600 dark:text-red-400">✗ Fail</span>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {Object.entries(testFlowMutation.data.test_results).map(
+                    ([key, value]) => {
+                      if (key === "overall_success") return null;
+                      const result = value as {
+                        success?: boolean;
+                        data?: { authorized?: boolean };
+                      } | null;
+                      const isAuthResult = key.startsWith("authorize_");
+                      const passed = isAuthResult
+                        ? result?.data?.authorized
+                        : result?.success;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="text-gray-600 dark:text-gray-400 capitalize">
+                            {key.replace(/_/g, " ")}
+                          </span>
+                          {passed ? (
+                            <span className="text-emerald-600 dark:text-emerald-400">
+                              ✓ Pass
+                            </span>
+                          ) : result === null ? (
+                            <span className="text-gray-400">—</span>
+                          ) : (
+                            <span className="text-red-600 dark:text-red-400">
+                              ✗ Fail
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+                  )}
                 </div>
               </div>
             )}
@@ -593,4 +625,3 @@ export function AuthzToolTestPanel() {
     </div>
   );
 }
-
