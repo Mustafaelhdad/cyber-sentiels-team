@@ -2821,6 +2821,269 @@ export function useAuthzToolTestFlow() {
 }
 
 // ============================================================================
+// Audit & Compliance Tool Types
+// ============================================================================
+
+export interface AuditToolHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+  health: {
+    status: string;
+    service: string;
+    timestamp: number;
+  } | null;
+}
+
+export interface AuditToolStatsResponse {
+  service: string;
+  total_events: number;
+  high_risk_events: number;
+  high_risk_threshold: number;
+  latest_event_time: string | null;
+  timestamp: number;
+}
+
+export interface AuditToolEvent {
+  timestamp: string;
+  user: string;
+  action: string;
+  risk: number;
+}
+
+export interface AuditToolEventsResponse {
+  events: AuditToolEvent[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AuditToolReportSummary {
+  generated_at: string;
+  total_events: number;
+  high_risk_count: number;
+  high_risk_threshold: number;
+  compliance_status: string;
+  high_risk_events?: AuditToolEvent[];
+  events?: AuditToolEvent[];
+}
+
+export interface AuditToolAlertsResponse {
+  alerts: string[];
+  total: number;
+}
+
+export interface AuditToolLogEventResponse {
+  success: boolean;
+  event: AuditToolEvent;
+}
+
+export interface AuditToolDemoResponse {
+  success: boolean;
+  events_logged: number;
+}
+
+export interface AuditToolGenerateReportResponse {
+  success: boolean;
+  report_path: string;
+  generated_at: string;
+  total_events: number;
+  high_risk_count: number;
+  compliance_status: string;
+}
+
+// ============================================================================
+// Audit & Compliance Tool Query Keys
+// ============================================================================
+
+export const auditToolQueryKeys = {
+  all: ["audit-tool"] as const,
+  health: ["audit-tool", "health"] as const,
+  stats: ["audit-tool", "stats"] as const,
+  report: ["audit-tool", "report"] as const,
+  events: (filters?: Record<string, string | number>) =>
+    ["audit-tool", "events", filters ?? {}] as const,
+  alerts: (limit: number = 100) =>
+    ["audit-tool", "alerts", limit] as const,
+};
+
+// ============================================================================
+// Audit & Compliance Tool Queries
+// ============================================================================
+
+/**
+ * Check Audit Tool service health.
+ */
+export function useAuditToolHealth() {
+  return useQuery({
+    queryKey: auditToolQueryKeys.health,
+    queryFn: () => apiFetch<AuditToolHealthResponse>("/audit-tool/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch Audit Tool statistics.
+ */
+export function useAuditToolStats() {
+  return useQuery({
+    queryKey: auditToolQueryKeys.stats,
+    queryFn: () => apiFetch<AuditToolStatsResponse>("/audit-tool/stats"),
+    staleTime: 1000 * 15, // 15 seconds
+    refetchInterval: 15000,
+  });
+}
+
+/**
+ * Fetch Audit Tool compliance report summary.
+ */
+export function useAuditToolReport() {
+  return useQuery({
+    queryKey: auditToolQueryKeys.report,
+    queryFn: () => apiFetch<AuditToolReportSummary>("/audit-tool/report"),
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 30000,
+  });
+}
+
+/**
+ * Fetch Audit Tool events.
+ */
+export function useAuditToolEvents(filters?: {
+  user?: string;
+  action?: string;
+  min_risk?: number;
+  limit?: number;
+  offset?: number;
+}) {
+  return useQuery({
+    queryKey: auditToolQueryKeys.events(filters),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, String(value));
+          }
+        });
+      }
+      const queryString = params.toString();
+      return apiFetch<AuditToolEventsResponse>(
+        `/audit-tool/events${queryString ? `?${queryString}` : ""}`
+      );
+    },
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000,
+  });
+}
+
+/**
+ * Fetch Audit Tool alerts.
+ */
+export function useAuditToolAlerts(limit: number = 100) {
+  return useQuery({
+    queryKey: auditToolQueryKeys.alerts(limit),
+    queryFn: () =>
+      apiFetch<AuditToolAlertsResponse>(`/audit-tool/alerts?limit=${limit}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000,
+  });
+}
+
+// ============================================================================
+// Audit & Compliance Tool Mutations
+// ============================================================================
+
+/**
+ * Log a new audit event.
+ */
+export function useAuditToolLogEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { user: string; action: string }) => {
+      const result = await authToolFetch<AuditToolLogEventResponse>(
+        "/audit-tool/log",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.report });
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.events() });
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.alerts(100) });
+    },
+  });
+}
+
+/**
+ * Generate demo audit events.
+ */
+export function useAuditToolDemoEvents() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await authToolFetch<AuditToolDemoResponse>(
+        "/audit-tool/demo",
+        {
+          method: "POST",
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.report });
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.events() });
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.alerts(100) });
+    },
+  });
+}
+
+/**
+ * Generate compliance report file.
+ */
+export function useAuditToolGenerateReport() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await authToolFetch<AuditToolGenerateReportResponse>(
+        "/audit-tool/report",
+        {
+          method: "POST",
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.report });
+    },
+  });
+}
+
+// ============================================================================
 // Account Provisioning Tool Types
 // ============================================================================
 

@@ -15,11 +15,13 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:8080",
+        // Use port 8080 for local Laravel dev server (docker-compose.local.yml)
+        // For production, this is handled by nginx
+        target: process.env.VITE_BACKEND_URL || "http://localhost:8080",
         changeOrigin: true,
       },
       "/sanctum": {
-        target: "http://localhost:8080",
+        target: process.env.VITE_BACKEND_URL || "http://localhost:8080",
         changeOrigin: true,
       },
     },

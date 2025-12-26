@@ -9,10 +9,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl openssl &&
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy initial config (HTTP only - for cert issuance)
-COPY default-initial.conf /etc/nginx/conf.d/default.conf
+# Using bridge network config for Docker DNS service discovery
+COPY default-bridge-initial.conf /etc/nginx/conf.d/default.conf
 
 # Store SSL config in a separate location (not in conf.d to avoid loading)
-COPY default.conf /etc/nginx/ssl-config/default-ssl.conf
+# Using bridge network config for Docker DNS service discovery (backend:9000, waf:5000, siem:5000)
+COPY default-bridge.conf /etc/nginx/ssl-config/default-ssl.conf
 
 # Create frontend directory (will be populated by build)
 RUN mkdir -p /var/www/frontend /var/www/certbot /etc/nginx/ssl-config
@@ -24,7 +26,7 @@ COPY frontend-dist/ /var/www/frontend/
 RUN mkdir -p /etc/nginx/ssl/live/cybersentinels.cloud
 
 # Create entrypoint script that checks for SSL certs on startup and polls for changes
-RUN cat > /docker-entrypoint-ssl.sh << 'ENTRYPOINT_EOF'
+RUN printf '%s\n' '#!/bin/sh' > /docker-entrypoint-ssl.sh && cat >> /docker-entrypoint-ssl.sh << 'ENTRYPOINT_EOF'
 #!/bin/sh
 set -e
 
@@ -88,7 +90,8 @@ fi
 exec /docker-entrypoint.sh "$@"
 ENTRYPOINT_EOF
 
-RUN chmod +x /docker-entrypoint-ssl.sh
+# Convert line endings and make executable
+RUN sed -i 's/\r$//' /docker-entrypoint-ssl.sh && chmod +x /docker-entrypoint-ssl.sh
 
 # Health check (using curl instead of wget for alpine compatibility)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

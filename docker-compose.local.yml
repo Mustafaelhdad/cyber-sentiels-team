@@ -1,0 +1,142 @@
+# ===================
+# LOCAL DEVELOPMENT DOCKER COMPOSE
+# ===================
+# Simplified setup for local development with minimal services
+
+services:
+  # ===================
+  # MYSQL (Database)
+  # ===================
+  # Uses host MySQL if available on 3306, otherwise starts its own
+  mysql:
+    image: mysql:8.0
+    container_name: sentinel_mysql_local
+    ports:
+      - "3307:3306" # Use 3307 to avoid conflict with host MySQL
+    environment:
+      - MYSQL_DATABASE=sentinel
+      - MYSQL_USER=sentinel
+      - MYSQL_PASSWORD=secret
+      - MYSQL_ROOT_PASSWORD=rootsecret
+    volumes:
+      - mysql_data_local:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===================
+  # REDIS (Cache/Session/Queue)
+  # ===================
+  redis:
+    image: redis:7-alpine
+    container_name: sentinel_redis_local
+    ports:
+      - "6380:6379" # Use 6380 to avoid conflict with host Redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_local:/data
+    restart: unless-stopped
+
+  # ===================
+  # BACKEND (Laravel PHP)
+  # ===================
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/php/Dockerfile
+    container_name: sentinel_backend_local
+    ports:
+      - "8080:8080"
+    working_dir: /var/www/backend
+    command: >
+      sh -c "
+        echo 'Waiting for MySQL...' &&
+        sleep 5 &&
+        php artisan migrate --force &&
+        php artisan serve --host=0.0.0.0 --port=8080
+      "
+    environment:
+      - APP_NAME=Sentinel
+      - APP_ENV=local
+      - APP_KEY=base64:vSvZE7y8wV6beMhp/aMaJgCvdEncsgPvb8ogyDMp7p4=
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8080
+      - LOG_CHANNEL=stack
+      - LOG_LEVEL=debug
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=sentinel
+      - DB_USERNAME=sentinel
+      - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_DRIVER=redis
+      - QUEUE_CONNECTION=sync
+      - SESSION_DRIVER=redis
+      - SANCTUM_STATEFUL_DOMAINS=localhost,localhost:5173,127.0.0.1:5173,localhost:8080
+      - SESSION_DOMAIN=localhost
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+      # Tool services (using Docker network names)
+      - ZAP_API_URL=http://zap:8080
+      - SAST_API_URL=http://sast:8080
+      - RASP_API_URL=http://rasp:9000
+      - SIEM_API_URL=http://siem:5051
+      - AUTH_API_URL=http://auth:5052
+      - AUTHZ_API_URL=http://authz:5053
+      - PROVISION_API_URL=http://provision:5054
+      - AUDIT_API_URL=http://audit:5060
+      - RASP_ENABLED=false
+    volumes:
+      - ./apps/backend:/var/www/backend
+      - laravel_storage_local:/var/www/backend/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # ===================
+  # Audit & Compliance Service (Port 5060)
+  # ===================
+  audit:
+    build:
+      context: ./tools/audit_compliance_system
+      dockerfile: Dockerfile
+    container_name: sentinel_audit_local
+    ports:
+      - "5060:5060"
+    environment:
+      - AUDIT_API_HOST=0.0.0.0
+      - AUDIT_API_PORT=5060
+      - AUDIT_API_WORKERS=2
+      - AUDIT_API_TIMEOUT=60
+      - AUDIT_DB_PATH=/data/audit.db
+      - AUDIT_REPORT_PATH=/data/compliance_report.txt
+      - AUDIT_ALERTS_FILE=/data/alerts.txt
+      - AUDIT_LOG_FILE=/data/audit_logs.txt
+      - AUDIT_MODE=api
+      - AUDIT_API_DEBUG=true
+    volumes:
+      - audit_data_local:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5060/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  mysql_data_local:
+    driver: local
+  redis_data_local:
+    driver: local
+  laravel_storage_local:
+    driver: local
+  audit_data_local:
+    driver: local

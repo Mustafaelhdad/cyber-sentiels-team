@@ -117,4 +117,15 @@ return [
     'timeout' => env('PROVISION_TIMEOUT', 30),
   ],
 
+  /*
+    |--------------------------------------------------------------------------
+    | Audit & Compliance Tool Service Configuration
+    |--------------------------------------------------------------------------
+    */
+
+  'audit_tool' => [
+    'url' => env('AUDIT_API_URL', 'http://audit:5060'),
+    'timeout' => env('AUDIT_TIMEOUT', 30),
+  ],
+
 ];

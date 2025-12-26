@@ -94,6 +94,7 @@ services:
       - AUTH_API_URL=http://127.0.0.1:5052
       - AUTHZ_API_URL=http://127.0.0.1:5053
       - PROVISION_API_URL=http://127.0.0.1:5054
+      - AUDIT_API_URL=http://127.0.0.1:5060
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -149,6 +150,7 @@ services:
       - AUTH_API_URL=http://127.0.0.1:5052
       - AUTHZ_API_URL=http://127.0.0.1:5053
       - PROVISION_API_URL=http://127.0.0.1:5054
+      - AUDIT_API_URL=http://127.0.0.1:5060
       # In-app RASP configuration
       - RASP_ENABLED=${RASP_ENABLED:-false}
       - RASP_MODE=${RASP_MODE:-monitor}
@@ -408,6 +410,36 @@ services:
     restart: unless-stopped
 
   # ===================
+  # Audit & Compliance Service (Host Network - Port 5060)
+  # ===================
+  audit:
+    build:
+      context: ./tools/audit_compliance_system
+      dockerfile: Dockerfile
+    container_name: sentinel_audit
+    network_mode: host
+    environment:
+      - AUDIT_API_HOST=127.0.0.1
+      - AUDIT_API_PORT=5060
+      - AUDIT_API_WORKERS=${AUDIT_WORKERS:-2}
+      - AUDIT_API_TIMEOUT=${AUDIT_TIMEOUT:-60}
+      - AUDIT_DB_PATH=/data/audit.db
+      - AUDIT_REPORT_PATH=/data/compliance_report.txt
+      - AUDIT_ALERTS_FILE=/data/alerts.txt
+      - AUDIT_LOG_FILE=/data/audit_logs.txt
+      - AUDIT_MODE=api
+      - AUDIT_API_DEBUG=${AUDIT_DEBUG:-false}
+    volumes:
+      - audit_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5060/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===================
   # OWASP ZAP (DAST Tool - Host Network - Port 8081)
   # ===================
   zap:
@@ -562,4 +594,6 @@ volumes:
   authz_data:
     driver: local
   provision_data:
+    driver: local
+  audit_data:
     driver: local

@@ -8,6 +8,7 @@ export { AuthzToolStatsCard } from "./AuthzToolStatsCard";
 export { AuthzToolUsersList } from "./AuthzToolUsersList";
 export { AuthzToolTestPanel } from "./AuthzToolTestPanel";
 export { AuditCompliancePanel } from "./AuditCompliancePanel";
+export { AuditComplianceStatsCard } from "./AuditComplianceStatsCard";
 export { AccountProvisioningPanel } from "./AccountProvisioningPanel";
 export { ProvisionStatsCard } from "./ProvisionStatsCard";
 export { ProvisionUsersList } from "./ProvisionUsersList";

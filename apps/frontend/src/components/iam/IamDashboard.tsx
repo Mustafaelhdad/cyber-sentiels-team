@@ -84,7 +84,7 @@ const tabs: Tab[] = [
     ),
     color: "amber",
     description: "Security audit trails and compliance monitoring",
-    status: "coming-soon",
+    status: "active",
   },
   {
     id: "provisioning",

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AuthToolController;
 use App\Http\Controllers\Api\AuthzToolController;
+use App\Http\Controllers\Api\AuditToolController;
 use App\Http\Controllers\Api\ProvisionToolController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
@@ -229,6 +230,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Testing
     Route::post('/test-flow', [AuthzToolController::class, 'testFlow']);
+  });
+
+  // Audit & Compliance Tool routes (global, not project-scoped)
+  Route::prefix('audit-tool')->group(function () {
+    Route::get('/health', [AuditToolController::class, 'health']);
+    Route::get('/stats', [AuditToolController::class, 'stats']);
+    Route::get('/events', [AuditToolController::class, 'events']);
+    Route::get('/alerts', [AuditToolController::class, 'alerts']);
+    Route::get('/report', [AuditToolController::class, 'report']);
+    Route::post('/report', [AuditToolController::class, 'generateReport']);
+    Route::get('/report/file', [AuditToolController::class, 'reportFile']);
+    Route::post('/log', [AuditToolController::class, 'log']);
+    Route::post('/demo', [AuditToolController::class, 'demo']);
   });
 
   // Account Provisioning Tool routes (global, not project-scoped)
