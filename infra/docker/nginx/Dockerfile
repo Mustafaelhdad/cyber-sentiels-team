@@ -1,8 +1,9 @@
 # Nginx with embedded configuration for production
-FROM nginx:alpine
+FROM nginx:1.27-alpine
 
-# Update package index and install curl and openssl for healthcheck and certificate validation
-RUN apk update && apk add --no-cache curl openssl
+# Install curl and openssl for healthcheck and certificate validation
+# Using specific version tag to avoid cache issues
+RUN apk --no-cache add curl openssl || (sleep 5 && apk --no-cache add curl openssl)
 
 # Remove default config
 RUN rm /etc/nginx/conf.d/default.conf
