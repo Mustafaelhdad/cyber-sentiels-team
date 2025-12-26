@@ -23,17 +23,17 @@ RUN mkdir -p /shared /app/logs \
 ENV PYTHONUNBUFFERED=1 \
     WAF_MAP_FILE=/shared/waf-map.json \
     WAF_HOST=0.0.0.0 \
-    WAF_PORT=5000 \
+    WAF_PORT=5050 \
     WAF_DEBUG=false \
     WAF_PROXY_TIMEOUT=30
 
 # Expose port
-EXPOSE 5000
+EXPOSE 5050
 
-# Health check
+# Health check - uses WAF_PORT env variable
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${WAF_PORT:-5050}/health')" || exit 1
 
 # Run with gunicorn for production (4 workers, timeout 60s)
-# For development, override with: python app.py
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+# Uses shell form to allow environment variable substitution
+CMD gunicorn --bind 0.0.0.0:${WAF_PORT:-5050} --workers 4 --timeout 60 --access-logfile - --error-logfile - app:app
