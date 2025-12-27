@@ -128,4 +128,15 @@ return [
     'timeout' => env('AUDIT_TIMEOUT', 30),
   ],
 
+  /*
+    |--------------------------------------------------------------------------
+    | SOAR (Security Orchestration, Automation & Response) Service Configuration
+    |--------------------------------------------------------------------------
+    */
+
+  'soar' => [
+    'url' => env('SOAR_API_URL', 'http://soar:5000'),
+    'timeout' => env('SOAR_TIMEOUT', 120),
+  ],
+
 ];

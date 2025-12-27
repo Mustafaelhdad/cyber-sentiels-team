@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\RunController;
 use App\Http\Controllers\Api\RunStreamController;
 use App\Http\Controllers\Api\SastController;
 use App\Http\Controllers\Api\SiemController;
+use App\Http\Controllers\Api\SoarController;
 use App\Http\Controllers\Api\WafProxyController;
 use App\Http\Controllers\Api\WafLogController;
 use App\Http\Controllers\RaspIncidentController;
@@ -268,5 +269,41 @@ Route::middleware('auth:sanctum')->group(function () {
     // Metadata
     Route::get('/roles', [ProvisionToolController::class, 'roles']);
     Route::get('/statuses', [ProvisionToolController::class, 'statuses']);
+  });
+
+  // SOAR (Security Orchestration, Automation & Response) routes
+  Route::prefix('soar')->group(function () {
+    // Health and status
+    Route::get('/health', [SoarController::class, 'health']);
+    Route::get('/stats', [SoarController::class, 'stats']);
+
+    // Alert processing
+    Route::post('/process', [SoarController::class, 'processAlert']);
+    Route::post('/siem-alert', [SoarController::class, 'handleSiemAlert']);
+
+    // Incidents
+    Route::get('/incidents', [SoarController::class, 'incidents']);
+    Route::get('/incidents/{incidentId}', [SoarController::class, 'showIncident']);
+    Route::post('/incidents/{incidentId}/status', [SoarController::class, 'updateIncidentStatus']);
+
+    // IP blocking
+    Route::get('/blocked-ips', [SoarController::class, 'blockedIps']);
+    Route::post('/block', [SoarController::class, 'blockIp']);
+    Route::post('/unblock', [SoarController::class, 'unblockIp']);
+
+    // Playbooks
+    Route::get('/playbooks', [SoarController::class, 'playbooks']);
+    Route::post('/playbooks', [SoarController::class, 'createPlaybook']);
+    Route::put('/playbooks/{playbookId}', [SoarController::class, 'updatePlaybook']);
+    Route::delete('/playbooks/{playbookId}', [SoarController::class, 'deletePlaybook']);
+
+    // Threat intelligence
+    Route::post('/threat-intel/check', [SoarController::class, 'checkThreatIntel']);
+
+    // Logs
+    Route::get('/logs', [SoarController::class, 'logs']);
+
+    // Demo/Testing
+    Route::post('/demo', [SoarController::class, 'demo']);
   });
 });
