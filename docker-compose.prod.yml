@@ -469,7 +469,22 @@ services:
       - certbot_certs:/etc/letsencrypt
     networks:
       - sentinel_net
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    environment:
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL:-admin@cybersentinels.cloud}
+      - CERTBOT_DOMAIN=${CERTBOT_DOMAIN:-cybersentinels.cloud}
+    entrypoint: >
+      /bin/sh -c "
+        if [ ! -f /etc/letsencrypt/live/cybersentinels.cloud/fullchain.pem ]; then
+          echo 'No SSL certificate found, attempting to obtain one...';
+          sleep 15;
+          certbot certonly --webroot -w /var/www/certbot --email $${CERTBOT_EMAIL} --domains $${CERTBOT_DOMAIN},www.$${CERTBOT_DOMAIN} --agree-tos --no-eff-email --non-interactive || echo 'Initial cert issuance failed (check DNS/firewall)';
+        fi;
+        trap exit TERM;
+        while :; do
+          certbot renew --webroot -w /var/www/certbot --quiet;
+          sleep 12h & wait $${!};
+        done
+      "
     restart: unless-stopped
 
 networks:
