@@ -2025,6 +2025,449 @@ export function useSiemDeleteBulk() {
   });
 }
 
+// ============================================================================
+// SOAR Types
+// ============================================================================
+
+export interface SoarIncident {
+  incident_id: string;
+  alert_id: string | null;
+  source_ip: string | null;
+  attack_type: string | null;
+  severity: string;
+  status: string;
+  decision: string;
+  created_at: string;
+  updated_at?: string;
+  resolved_at?: string | null;
+  metadata?: Record<string, unknown>;
+  actions?: SoarAction[];
+}
+
+export interface SoarAction {
+  action_type: string;
+  action_detail: string;
+  status: string;
+  result: string | null;
+  executed_at: string;
+}
+
+export interface SoarBlockedIp {
+  ip_address: string;
+  reason: string | null;
+  incident_id: string | null;
+  blocked_at: string;
+  expires_at: string | null;
+}
+
+export interface SoarPlaybook {
+  id: number;
+  name: string;
+  description: string | null;
+  trigger_conditions: Record<string, string>;
+  actions: string[];
+  enabled: boolean;
+  created_at: string;
+}
+
+export interface SoarStats {
+  incidents_processed: number;
+  threats_detected: number;
+  actions_executed: number;
+  ips_blocked: number;
+  system_status: string;
+}
+
+export interface SoarExecutionLog {
+  incident_id: string;
+  alert_id: string;
+  timestamp: string;
+  decision: string;
+  logs: string[];
+  actions: Array<{ action: string; result: string }>;
+}
+
+export interface SoarThreatIntelResult {
+  ip?: {
+    value: string;
+    is_malicious: boolean;
+    reason: string;
+  };
+  payload?: {
+    is_malicious: boolean;
+    reason: string;
+  };
+}
+
+// SOAR API Responses
+interface SoarHealthResponse {
+  available: boolean;
+  service: string;
+  url: string;
+  health: {
+    status: string;
+    service: string;
+    version: string;
+    timestamp: string;
+  } | null;
+}
+
+interface SoarStatsResponse extends SoarStats {}
+
+interface SoarIncidentsResponse {
+  total: number;
+  incidents: SoarIncident[];
+}
+
+interface SoarBlockedIpsResponse {
+  total: number;
+  blocked_ips: SoarBlockedIp[];
+}
+
+interface SoarPlaybooksResponse {
+  total: number;
+  playbooks: SoarPlaybook[];
+}
+
+interface SoarLogsResponse {
+  total: number;
+  logs: SoarExecutionLog[];
+}
+
+interface SoarProcessAlertResponse {
+  success: boolean;
+  message: string;
+  incident_id: string;
+  decision: string;
+  is_malicious: boolean;
+  actions_taken: Array<{ action: string; result: string }>;
+  logs: string[];
+}
+
+interface SoarThreatIntelResponse {
+  success: boolean;
+  results: SoarThreatIntelResult;
+}
+
+interface SoarDemoResponse {
+  success: boolean;
+  message: string;
+  demo_type: string;
+  alert_sent: Record<string, unknown>;
+  incident_id: string;
+  decision: string;
+  is_malicious: boolean;
+  actions_taken: Array<{ action: string; result: string }>;
+  logs: string[];
+}
+
+// ============================================================================
+// SOAR Query Keys
+// ============================================================================
+
+export const soarQueryKeys = {
+  health: ["soar-health"] as const,
+  stats: ["soar-stats"] as const,
+  incidents: (limit?: number) => ["soar-incidents", limit ?? 50] as const,
+  incident: (id: string) => ["soar-incident", id] as const,
+  blockedIps: ["soar-blocked-ips"] as const,
+  playbooks: ["soar-playbooks"] as const,
+  logs: (limit?: number) => ["soar-logs", limit ?? 100] as const,
+};
+
+// ============================================================================
+// SOAR Queries
+// ============================================================================
+
+/**
+ * Check SOAR service health.
+ */
+export function useSoarHealth() {
+  return useQuery({
+    queryKey: soarQueryKeys.health,
+    queryFn: () => apiFetch<SoarHealthResponse>("/soar/health"),
+    staleTime: 1000 * 30, // 30 seconds
+    retry: false,
+  });
+}
+
+/**
+ * Fetch SOAR statistics.
+ */
+export function useSoarStats() {
+  return useQuery({
+    queryKey: soarQueryKeys.stats,
+    queryFn: () => apiFetch<SoarStatsResponse>("/soar/stats"),
+    staleTime: 1000 * 15, // 15 seconds
+    refetchInterval: 15000, // Poll every 15s
+  });
+}
+
+/**
+ * Fetch SOAR incidents.
+ */
+export function useSoarIncidents(limit = 50) {
+  return useQuery({
+    queryKey: soarQueryKeys.incidents(limit),
+    queryFn: () =>
+      apiFetch<SoarIncidentsResponse>(`/soar/incidents?limit=${limit}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch a single SOAR incident.
+ */
+export function useSoarIncident(incidentId: string | undefined) {
+  return useQuery({
+    queryKey: soarQueryKeys.incident(incidentId ?? ""),
+    queryFn: () => apiFetch<SoarIncident>(`/soar/incidents/${incidentId}`),
+    enabled: !!incidentId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+/**
+ * Fetch blocked IPs.
+ */
+export function useSoarBlockedIps() {
+  return useQuery({
+    queryKey: soarQueryKeys.blockedIps,
+    queryFn: () => apiFetch<SoarBlockedIpsResponse>("/soar/blocked-ips"),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+/**
+ * Fetch SOAR playbooks.
+ */
+export function useSoarPlaybooks() {
+  return useQuery({
+    queryKey: soarQueryKeys.playbooks,
+    queryFn: () => apiFetch<SoarPlaybooksResponse>("/soar/playbooks"),
+    staleTime: 1000 * 60, // 1 minute
+  });
+}
+
+/**
+ * Fetch SOAR execution logs.
+ */
+export function useSoarLogs(limit = 100) {
+  return useQuery({
+    queryKey: soarQueryKeys.logs(limit),
+    queryFn: () => apiFetch<SoarLogsResponse>(`/soar/logs?limit=${limit}`),
+    staleTime: 1000 * 10, // 10 seconds
+    refetchInterval: 10000, // Poll every 10s
+  });
+}
+
+// ============================================================================
+// SOAR Mutations
+// ============================================================================
+
+/**
+ * Process an alert through SOAR.
+ */
+export function useSoarProcessAlert() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      alert_id?: string;
+      source_ip: string;
+      type?: string;
+      attack_type?: string;
+      severity?: string;
+      payload?: string;
+      description?: string;
+    }) =>
+      apiFetch<SoarProcessAlertResponse>("/soar/process", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.incidents() });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.blockedIps });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.logs() });
+    },
+  });
+}
+
+/**
+ * Update incident status.
+ */
+export function useSoarUpdateIncidentStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { incidentId: string; status: string }) =>
+      apiFetch<{ success: boolean; message: string }>(
+        `/soar/incidents/${payload.incidentId}/status`,
+        {
+          method: "POST",
+          body: JSON.stringify({ status: payload.status }),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.incidents() });
+    },
+  });
+}
+
+/**
+ * Block an IP address.
+ */
+export function useSoarBlockIp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      ip_address: string;
+      reason?: string;
+      duration_hours?: number;
+    }) =>
+      apiFetch<{ success: boolean; message: string }>("/soar/block", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.blockedIps });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.stats });
+    },
+  });
+}
+
+/**
+ * Unblock an IP address.
+ */
+export function useSoarUnblockIp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ip_address: string) =>
+      apiFetch<{ success: boolean; message: string }>("/soar/unblock", {
+        method: "POST",
+        body: JSON.stringify({ ip_address }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.blockedIps });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.stats });
+    },
+  });
+}
+
+/**
+ * Create a new playbook.
+ */
+export function useSoarCreatePlaybook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      name: string;
+      description?: string;
+      trigger_conditions?: Record<string, string>;
+      actions: string[];
+      enabled?: boolean;
+    }) =>
+      apiFetch<{ success: boolean; message: string; playbook_id: number }>(
+        "/soar/playbooks",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.playbooks });
+    },
+  });
+}
+
+/**
+ * Update a playbook.
+ */
+export function useSoarUpdatePlaybook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      playbookId: number;
+      name?: string;
+      description?: string;
+      trigger_conditions?: Record<string, string>;
+      actions?: string[];
+      enabled?: boolean;
+    }) => {
+      const { playbookId, ...data } = payload;
+      return apiFetch<{ success: boolean; message: string }>(
+        `/soar/playbooks/${playbookId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.playbooks });
+    },
+  });
+}
+
+/**
+ * Delete a playbook.
+ */
+export function useSoarDeletePlaybook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (playbookId: number) =>
+      apiFetch<{ success: boolean; message: string }>(
+        `/soar/playbooks/${playbookId}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.playbooks });
+    },
+  });
+}
+
+/**
+ * Check threat intelligence.
+ */
+export function useSoarCheckThreatIntel() {
+  return useMutation({
+    mutationFn: (payload: { ip?: string; payload?: string }) =>
+      apiFetch<SoarThreatIntelResponse>("/soar/threat-intel/check", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  });
+}
+
+/**
+ * Run a demo alert.
+ */
+export function useSoarDemo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (type: "sql_injection" | "brute_force" | "xss" | "clean") =>
+      apiFetch<SoarDemoResponse>("/soar/demo", {
+        method: "POST",
+        body: JSON.stringify({ type }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.incidents() });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.blockedIps });
+      queryClient.invalidateQueries({ queryKey: soarQueryKeys.logs() });
+    },
+  });
+}
+
 /**
  * Upload and analyze a log file.
  */
@@ -2903,8 +3346,7 @@ export const auditToolQueryKeys = {
   report: ["audit-tool", "report"] as const,
   events: (filters?: Record<string, string | number>) =>
     ["audit-tool", "events", filters ?? {}] as const,
-  alerts: (limit: number = 100) =>
-    ["audit-tool", "alerts", limit] as const,
+  alerts: (limit: number = 100) => ["audit-tool", "alerts", limit] as const,
 };
 
 // ============================================================================
@@ -3021,7 +3463,9 @@ export function useAuditToolLogEvent() {
       queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.stats });
       queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.report });
       queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.events() });
-      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.alerts(100) });
+      queryClient.invalidateQueries({
+        queryKey: auditToolQueryKeys.alerts(100),
+      });
     },
   });
 }
@@ -3051,7 +3495,9 @@ export function useAuditToolDemoEvents() {
       queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.stats });
       queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.report });
       queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.events() });
-      queryClient.invalidateQueries({ queryKey: auditToolQueryKeys.alerts(100) });
+      queryClient.invalidateQueries({
+        queryKey: auditToolQueryKeys.alerts(100),
+      });
     },
   });
 }
@@ -3395,9 +3841,15 @@ export function useProvisionToolCreateUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.users(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.audit(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.report,
+      });
     },
   });
 }
@@ -3434,9 +3886,15 @@ export function useProvisionToolUpdateUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.users(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.audit(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.report,
+      });
     },
   });
 }
@@ -3464,9 +3922,15 @@ export function useProvisionToolDeleteUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.users(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.audit(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.report,
+      });
     },
   });
 }
@@ -3495,9 +3959,15 @@ export function useProvisionToolDisableUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.users(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.audit(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.report,
+      });
     },
   });
 }
@@ -3526,9 +3996,15 @@ export function useProvisionToolEnableUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.users(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.audit(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.report,
+      });
     },
   });
 }
@@ -3565,9 +4041,15 @@ export function useProvisionToolBulkCreate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.stats });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.users() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.audit() });
-      queryClient.invalidateQueries({ queryKey: provisionToolQueryKeys.report });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.users(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.audit(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: provisionToolQueryKeys.report,
+      });
     },
   });
 }

@@ -1,4 +1,4 @@
-import { SiemDashboard } from "@/components/siem";
+import { MonitoringDashboard } from "@/components/monitoring";
 
 export default function Monitoring() {
   return (
@@ -8,12 +8,12 @@ export default function Monitoring() {
           Monitoring & IR
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Real-time security monitoring, log analysis, and automated incident
-          response workflows.
+          SIEM, TIP, and SOAR for log ingestion, threat enrichment, and
+          automated response.
         </p>
       </div>
 
-      <SiemDashboard />
+      <MonitoringDashboard />
     </div>
   );
 }
