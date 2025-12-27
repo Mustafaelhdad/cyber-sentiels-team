@@ -29,7 +29,7 @@ User traffic → Nginx Gateway → Flask WAF → Origin Server
 ```
 Client Request
       ↓
-https://cybersentinels.cloud/waf-flask/{token}/path
+http://72.62.93.170/waf-flask/{token}/path
       ↓
 Nginx Gateway (port 80/443)
       ↓
@@ -60,7 +60,7 @@ Add to your `.env` file:
 
 ```env
 # WAF Configuration
-WAF_BASE_URL=https://cybersentinels.cloud  # Public WAF URL
+WAF_BASE_URL=http://72.62.93.170  # Public WAF URL
 WAF_DEBUG=false                             # Enable debug mode (dev only)
 WAF_PROXY_TIMEOUT=30                        # Upstream timeout in seconds
 ```
@@ -131,7 +131,7 @@ Response:
     "name": "Example Site",
     "origin_url": "https://example.com",
     "token": "abc123xyz789...",
-    "waf_url": "https://cybersentinels.cloud/waf-flask/abc123xyz789.../",
+    "waf_url": "http://72.62.93.170/waf-flask/abc123xyz789.../",
     "status": "active",
     "counters": {
       "allowed": 0,
@@ -178,7 +178,7 @@ The Flask WAF detects and blocks the following attack types:
 Once created, you'll receive a WAF URL like:
 
 ```
-https://cybersentinels.cloud/waf-flask/abc123xyz789.../
+http://72.62.93.170/waf-flask/abc123xyz789.../
 ```
 
 Send your traffic to this URL instead of directly to your origin. The WAF will:
@@ -194,16 +194,16 @@ Test blocking with common attack patterns:
 
 ```bash
 # SQL Injection test (should be blocked)
-curl "https://cybersentinels.cloud/waf-flask/{token}/?id=1' OR '1'='1"
+curl "http://72.62.93.170/waf-flask/{token}/?id=1' OR '1'='1"
 
 # XSS test (should be blocked)
-curl "https://cybersentinels.cloud/waf-flask/{token}/?q=<script>alert(1)</script>"
+curl "http://72.62.93.170/waf-flask/{token}/?q=<script>alert(1)</script>"
 
 # SSTI test (should be blocked)
-curl "https://cybersentinels.cloud/waf-flask/{token}/?name={{7*7}}"
+curl "http://72.62.93.170/waf-flask/{token}/?name={{7*7}}"
 
 # Clean request (should pass through)
-curl "https://cybersentinels.cloud/waf-flask/{token}/"
+curl "http://72.62.93.170/waf-flask/{token}/"
 ```
 
 ### 4. Monitor Traffic

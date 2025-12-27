@@ -109,8 +109,8 @@ class WafProxyService
   protected function normalizeOriginUrl(string $url): string
   {
     // Ensure URL has a scheme
-    if (!preg_match('/^https?:\/\//', $url)) {
-      $url = 'https://' . $url;
+    if (!preg_match('/^http?:\/\//', $url)) {
+      $url = 'http://' . $url;
     }
 
     // Remove trailing slash
@@ -119,7 +119,7 @@ class WafProxyService
 
   /**
    * Regenerate the JSON map file for token -> origin routing.
-   * Format: { "token1": "https://origin1.com", "token2": "https://origin2.com" }
+   * Format: { "token1": "http://origin1.com", "token2": "http://origin2.com" }
    */
   public function regenerateMapFile(): void
   {
