@@ -1,0 +1,6 @@
+{
+  "alert_id": "SIEM-003",
+  "type": "Brute Force Attack",
+  "source_ip": "185.220.101.46",
+  "severity": "High"
+}

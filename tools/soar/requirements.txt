@@ -1,0 +1,25 @@
+# Cyber Sentinels SOAR Tool Dependencies
+# =====================================
+
+# Web Framework
+Flask==2.3.3
+werkzeug==2.3.7
+
+# WebSocket Support
+Flask-SocketIO==5.3.6
+python-socketio==5.11.0
+python-engineio==4.9.0
+
+# Async support for WebSockets (gevent works better with Python 3.12)
+gevent>=23.9.0
+gevent-websocket>=0.10.1
+
+# HTTP Client for SIEM integration
+requests>=2.31.0
+
+# Environment Configuration
+python-dotenv==1.0.0
+
+# Production Server
+gunicorn==21.2.0
+

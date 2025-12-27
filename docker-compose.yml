@@ -103,6 +103,7 @@ services:
       - AUTHZ_API_URL=http://authz:5000
       - PROVISION_API_URL=http://provision:5000
       - AUDIT_API_URL=http://audit:5060
+      - SOAR_API_URL=http://soar:5000
       - RASP_ENABLED=${RASP_ENABLED:-false}
     volumes:
       - laravel_storage:/var/www/backend/storage
@@ -151,6 +152,7 @@ services:
       - AUTHZ_API_URL=http://authz:5000
       - PROVISION_API_URL=http://provision:5000
       - AUDIT_API_URL=http://audit:5060
+      - SOAR_API_URL=http://soar:5000
       - RASP_ENABLED=${RASP_ENABLED:-false}
     volumes:
       - laravel_storage:/var/www/backend/storage
@@ -462,6 +464,38 @@ services:
     restart: unless-stopped
 
   # ===================
+  # SOAR (Security Orchestration, Automation & Response)
+  # ===================
+  soar:
+    build:
+      context: ./tools/soar
+      dockerfile: Dockerfile
+    container_name: sentinel_soar
+    environment:
+      - SOAR_HOST=0.0.0.0
+      - SOAR_PORT=5000
+      - SOAR_WORKERS=${SOAR_WORKERS:-2}
+      - SOAR_TIMEOUT=${SOAR_TIMEOUT:-120}
+      - SOAR_SECRET_KEY=${SOAR_SECRET_KEY:-change-this-in-production}
+      - SOAR_DATA_DIR=/data
+      - SOAR_LOG_DIR=/app/logs
+      - SOAR_REPORTS_DIR=/app/reports
+      - SIEM_API_URL=http://siem:5000
+    volumes:
+      - soar_data:/data
+      - soar_logs:/app/logs
+      - soar_reports:/app/reports
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ===================
   # Certbot (SSL Certificate Management)
   # ===================
   certbot:
@@ -519,4 +553,10 @@ volumes:
   provision_data:
     driver: local
   audit_data:
+    driver: local
+  soar_data:
+    driver: local
+  soar_logs:
+    driver: local
+  soar_reports:
     driver: local
